@@ -1,0 +1,45 @@
+import {
+  Map,
+  Stamp,
+  Plane,
+  BedDouble,
+  CarFront,
+  Camera,
+  CreditCard,
+  FerrisWheel,
+  MoonStar,
+  HeartHandshake,
+  ShieldCheck,
+  Clock,
+  Wallet,
+  Instagram,
+  Facebook,
+  MessageCircle,
+  Globe,
+} from 'lucide-react'
+
+// Maps the string names used in data modules to lucide components,
+// including a few friendly aliases.
+const iconMap = {
+  Map,
+  Stamp,
+  StampIcon: Stamp,
+  Plane,
+  BedDouble,
+  CarFront,
+  Camera,
+  CreditCard,
+  FerrisWheel,
+  Ferris: FerrisWheel,
+  MoonStar,
+  HeartHandshake,
+  ShieldCheck,
+  Clock,
+  Wallet,
+  Instagram,
+  Facebook,
+  MessageCircle,
+  Globe,
+}
+
+export const getIcon = (name) => iconMap[name] || Globe
