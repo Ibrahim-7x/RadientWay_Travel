@@ -26,6 +26,10 @@ export const company = {
   reviewCount: 640,
 }
 
+// Build a WhatsApp chat link, optionally with a prefilled message.
+export const waLink = (text) =>
+  text ? `${company.whatsapp}?text=${encodeURIComponent(text)}` : company.whatsapp
+
 export const stats = [
   { value: 8, suffix: '+', label: 'Years of expertise' },
   { value: 50, suffix: 'k+', label: 'Happy travellers' },

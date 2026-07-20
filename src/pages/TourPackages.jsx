@@ -4,7 +4,7 @@ import { SlidersHorizontal } from 'lucide-react'
 import PageHero from '../components/ui/PageHero'
 import TourCard from '../components/ui/TourCard'
 import { packages, regions, img } from '../data/packages'
-import { stagger } from '../lib/motion'
+import { easeOutExpo } from '../lib/motion'
 
 const sortOptions = [
   { value: 'featured', label: 'Featured' },
@@ -85,14 +85,18 @@ export default function TourPackages() {
 
           <motion.div
             layout
-            variants={stagger(0.08)}
-            initial="hidden"
-            animate="show"
             className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
           >
             <AnimatePresence mode="popLayout">
-              {filtered.map((pkg) => (
-                <motion.div key={pkg.slug} layout exit={{ opacity: 0, scale: 0.9 }}>
+              {filtered.map((pkg, i) => (
+                <motion.div
+                  key={pkg.slug}
+                  layout
+                  initial={{ opacity: 0, y: 24 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={{ duration: 0.4, ease: easeOutExpo, delay: (i % 3) * 0.05 }}
+                >
                   <TourCard pkg={pkg} />
                 </motion.div>
               ))}

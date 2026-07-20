@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { MapPin, Moon, Star, ArrowUpRight } from 'lucide-react'
+import { MapPin, Moon, Star, ArrowUpRight, MessageCircle } from 'lucide-react'
 import SmartImage from './SmartImage'
+import { waLink } from '../../data/company'
 
 export default function TourCard({ pkg }) {
   return (
@@ -10,8 +11,20 @@ export default function TourCard({ pkg }) {
         hidden: { opacity: 0, y: 40 },
         show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } },
       }}
-      className="group h-full"
+      className="group relative h-full"
     >
+      {/* Sibling of the card Link (never nested inside it — anchors can't nest). */}
+      <a
+        href={waLink(`Hi RadiantWay, I'm interested in the "${pkg.name}" package. Could you share more details?`)}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={`Chat about ${pkg.name} on WhatsApp`}
+        title="Chat on WhatsApp"
+        className="absolute right-4 top-4 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg shadow-[#25D366]/40 transition-transform duration-300 hover:scale-110"
+      >
+        <MessageCircle className="h-5 w-5" />
+      </a>
+
       <Link
         to={`/tours/${pkg.slug}`}
         className="card-surface flex h-full flex-col overflow-hidden transition-all duration-500 hover:-translate-y-2 hover:shadow-card-hover"

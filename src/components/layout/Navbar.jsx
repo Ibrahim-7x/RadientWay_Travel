@@ -30,16 +30,17 @@ export default function Navbar() {
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
           scrolled
-            ? 'glass-navy border-b border-white/10 py-3 shadow-navy'
+            ? 'border-b border-navy-950/10 bg-white/90 py-3 shadow-card backdrop-blur-xl'
             : 'bg-transparent py-5'
         }`}
       >
         <nav className="container-x flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2.5" aria-label="RadiantWay Travel home">
-            <Logo className="h-9 w-9" />
-            <span className="font-display text-xl font-semibold text-white">
-              Radiant<span className="text-gradient-gold">Way</span>
-            </span>
+          <Link to="/" className="flex items-center" aria-label="RadiantWay Travel home">
+            <Logo
+              className="h-12 w-auto sm:h-14"
+              markColor={scrolled ? '#0B1A2F' : '#E0A82E'}
+              travelColor={scrolled ? '#E0A82E' : '#0B1A2F'}
+            />
           </Link>
 
           <ul className="hidden items-center gap-8 lg:flex">
@@ -49,7 +50,11 @@ export default function Navbar() {
                   to={link.to}
                   className={({ isActive }) =>
                     `link-underline text-sm font-medium tracking-wide transition-colors ${
-                      isActive ? 'text-gold-400' : 'text-white/90 hover:text-white'
+                      isActive
+                        ? 'text-gold-500'
+                        : scrolled
+                        ? 'text-navy-700 hover:text-navy-950'
+                        : 'text-white/90 hover:text-white'
                     }`
                   }
                 >
@@ -62,9 +67,11 @@ export default function Navbar() {
           <div className="hidden items-center gap-4 lg:flex">
             <a
               href={company.phoneHref}
-              className="flex items-center gap-2 text-sm font-medium text-white/90 transition-colors hover:text-gold-400"
+              className={`flex items-center gap-2 text-sm font-medium transition-colors ${
+                scrolled ? 'text-navy-800 hover:text-gold-600' : 'text-white/90 hover:text-gold-400'
+              }`}
             >
-              <Phone className="h-4 w-4 text-gold-400" />
+              <Phone className="h-4 w-4 text-gold-500" />
               {company.phone}
             </a>
             <AnimatedButton to="/book" showArrow>
@@ -73,7 +80,9 @@ export default function Navbar() {
           </div>
 
           <button
-            className="rounded-full p-2 text-white lg:hidden"
+            className={`rounded-full p-2 transition-colors lg:hidden ${
+              scrolled ? 'text-navy-900' : 'text-white'
+            }`}
             onClick={() => setOpen(true)}
             aria-label="Open menu"
           >
@@ -101,9 +110,7 @@ export default function Navbar() {
               className="fixed right-0 top-0 z-[80] flex h-full w-[82%] max-w-sm flex-col bg-navy-950 p-7 lg:hidden"
             >
               <div className="flex items-center justify-between">
-                <span className="font-display text-lg font-semibold text-white">
-                  Radiant<span className="text-gradient-gold">Way</span>
-                </span>
+                <Logo className="h-11 w-auto" markColor="#E0A82E" travelColor="#ffffff" />
                 <button
                   onClick={() => setOpen(false)}
                   className="rounded-full p-2 text-white"

@@ -1,13 +1,18 @@
+import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowRight, Clock, FileCheck } from 'lucide-react'
+import { ArrowRight, Clock, FileCheck, Info, MessageCircle } from 'lucide-react'
 import PageHero from '../components/ui/PageHero'
 import SectionHeading from '../components/ui/SectionHeading'
 import AnimatedButton from '../components/ui/AnimatedButton'
+import VisaDetailModal from '../components/ui/VisaDetailModal'
 import { visas, visaSteps } from '../data/visas'
+import { waLink } from '../data/company'
 import { img } from '../data/packages'
 import { fadeUp, stagger, viewportOnce } from '../lib/motion'
 
 export default function VisaServicesPage() {
+  const [selected, setSelected] = useState(null)
+
   return (
     <>
       <PageHero
@@ -52,9 +57,29 @@ export default function VisaServicesPage() {
                 <div className="mt-2 flex items-center gap-2 text-sm text-navy-600">
                   <FileCheck className="h-4 w-4 text-gold-600" /> {v.note}
                 </div>
-                <AnimatedButton to="/contact" variant="navy" className="mt-6 w-full" showArrow>
-                  Enquire now
-                </AnimatedButton>
+                <div className="mt-6 flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setSelected(v)}
+                    className="group/btn inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-navy-950/15 bg-white px-5 py-3 text-sm font-semibold text-navy-950 transition-all duration-300 hover:border-gold-400 hover:bg-gold-50 hover:-translate-y-0.5"
+                  >
+                    <Info className="h-4 w-4 text-gold-600 transition-transform duration-300 group-hover/btn:scale-110" />
+                    Details
+                  </button>
+                  <AnimatedButton to="/contact" variant="navy" className="flex-1" showArrow>
+                    Enquire
+                  </AnimatedButton>
+                  <a
+                    href={waLink(`Hi RadiantWay, I'd like help with a ${v.country} visa (${v.type}).`)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`Chat about ${v.country} visa on WhatsApp`}
+                    title="Chat on WhatsApp"
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg shadow-[#25D366]/30 transition-transform duration-300 hover:scale-110"
+                  >
+                    <MessageCircle className="h-5 w-5" />
+                  </a>
+                </div>
               </motion.div>
             ))}
           </motion.div>
@@ -94,6 +119,8 @@ export default function VisaServicesPage() {
           </p>
         </div>
       </section>
+
+      <VisaDetailModal visa={selected} onClose={() => setSelected(null)} />
     </>
   )
 }

@@ -21,11 +21,8 @@ export default function Footer() {
         <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-4">
           {/* Brand */}
           <div className="flex flex-col gap-5">
-            <Link to="/" className="flex items-center gap-2.5">
-              <Logo className="h-10 w-10" />
-              <span className="font-display text-2xl font-semibold text-white">
-                Radiant<span className="text-gradient-gold">Way</span>
-              </span>
+            <Link to="/" className="flex items-center">
+              <Logo className="h-16 w-auto" markColor="#E0A82E" travelColor="#ffffff" />
             </Link>
             <p className="max-w-xs text-sm leading-relaxed text-navy-200">
               {company.intro}
