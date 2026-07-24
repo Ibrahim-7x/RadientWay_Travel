@@ -6,6 +6,10 @@ export const company = {
     'UAE-based travel experts with global reach. We craft tailored tour packages, handle your visas, and take care of every detail — so all you have to do is travel.',
   phone: '+971 54 786 1293',
   phoneHref: 'tel:+971547861293',
+  // Department contact numbers shown in the navbar dropdown. Editable from
+  // Admin → Settings. Defaults to the main number until you set real ones.
+  holidaysPhone: '+971 54 786 1293',
+  visaPhone: '+971 54 786 1293',
   whatsapp: 'https://wa.me/971547861293',
   email: 'info@radiantwaytravel.com',
   emailHref: 'mailto:info@radiantwaytravel.com',
@@ -29,6 +33,9 @@ export const company = {
 // Build a WhatsApp chat link, optionally with a prefilled message.
 export const waLink = (text) =>
   text ? `${company.whatsapp}?text=${encodeURIComponent(text)}` : company.whatsapp
+
+// Turn a display phone number into a tel: href (keeps digits and leading +).
+export const telHref = (phone) => `tel:${String(phone || '').replace(/[^\d+]/g, '')}`
 
 export const stats = [
   { value: 8, suffix: '+', label: 'Years of expertise' },

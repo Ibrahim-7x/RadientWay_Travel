@@ -25,11 +25,8 @@ export default function TourCard({ pkg }) {
         <MessageCircle className="h-5 w-5" />
       </a>
 
-      <Link
-        to={`/tours/${pkg.slug}`}
-        className="card-surface flex h-full flex-col overflow-hidden transition-all duration-500 hover:-translate-y-2 hover:shadow-card-hover"
-      >
-        <div className="relative h-56 overflow-hidden">
+      <div className="card-surface flex h-full flex-col overflow-hidden transition-all duration-500 group-hover:-translate-y-2 group-hover:shadow-card-hover">
+        <Link to={`/tours/${pkg.slug}`} className="relative block h-56 overflow-hidden">
           <SmartImage
             src={pkg.image}
             alt={pkg.name}
@@ -63,7 +60,7 @@ export default function TourCard({ pkg }) {
             <MapPin className="h-4 w-4 text-gold-400" />
             {pkg.city}
           </div>
-        </div>
+        </Link>
 
         <div className="flex flex-1 flex-col p-6">
           <div className="mb-2 flex items-center justify-between">
@@ -93,12 +90,25 @@ export default function TourCard({ pkg }) {
             ))}
           </div>
 
-          <div className="mt-auto flex items-center gap-1.5 pt-5 text-sm font-semibold text-navy-950">
-            View details
-            <ArrowUpRight className="h-4 w-4 text-gold-600 transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1" />
+          <div className="mt-auto flex items-center gap-3 pt-5">
+            <Link
+              to={`/tours/${pkg.slug}`}
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-navy-950 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-navy-800"
+            >
+              View Details
+              <ArrowUpRight className="h-4 w-4 text-gold-400 transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1" />
+            </Link>
+            <Link
+              to="/contact"
+              aria-label={`Enquire about ${pkg.name}`}
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-semibold text-navy-950 ring-1 ring-navy-950/15 transition-colors hover:bg-gold-100 hover:ring-gold-400"
+            >
+              <MessageCircle className="h-4 w-4 text-gold-600" />
+              Enquire
+            </Link>
           </div>
         </div>
-      </Link>
+      </div>
     </motion.div>
   )
 }

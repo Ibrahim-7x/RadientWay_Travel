@@ -1,4 +1,4 @@
-import { img } from './packages'
+import { img } from './packages.js'
 
 // Popular destination showcase cards.
 export const destinations = [

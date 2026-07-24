@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { SlidersHorizontal } from 'lucide-react'
 import PageHero from '../components/ui/PageHero'
 import TourCard from '../components/ui/TourCard'
-import { packages, regions, img } from '../data/packages'
+import { img } from '../data/packages'
+import { useContent } from '../context/ContentContext'
 import { easeOutExpo } from '../lib/motion'
 
 const sortOptions = [
@@ -14,6 +15,7 @@ const sortOptions = [
 ]
 
 export default function TourPackages() {
+  const { packages, regions } = useContent()
   const [region, setRegion] = useState('All')
   const [sort, setSort] = useState('featured')
 
@@ -33,7 +35,7 @@ export default function TourPackages() {
         list = [...list].sort((a, b) => (b.featured === a.featured ? 0 : b.featured ? 1 : -1))
     }
     return list
-  }, [region, sort])
+  }, [region, sort, packages])
 
   return (
     <>

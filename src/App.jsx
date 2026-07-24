@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, lazy, Suspense } from 'react'
 import { Routes, Route, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import Lenis from 'lenis'
@@ -8,6 +8,7 @@ import Footer from './components/layout/Footer'
 import ScrollProgress from './components/layout/ScrollProgress'
 import WhatsAppFab from './components/layout/WhatsAppFab'
 import ScrollToTop from './components/layout/ScrollToTop'
+import { ContentProvider } from './context/ContentContext'
 
 import Home from './pages/Home'
 import TourPackages from './pages/TourPackages'
@@ -17,6 +18,9 @@ import About from './pages/About'
 import Contact from './pages/Contact'
 import BookNow from './pages/BookNow'
 import NotFound from './pages/NotFound'
+
+// Admin is code-split so its bundle never loads on the public site.
+const AdminRoutes = lazy(() => import('./pages/admin/AdminRoutes'))
 
 function usePrefersReducedMotion() {
   return (
@@ -33,21 +37,16 @@ const pageVariants = {
 
 function Page({ children }) {
   return (
-    <motion.main
-      variants={pageVariants}
-      initial="initial"
-      animate="enter"
-      exit="exit"
-    >
+    <motion.main variants={pageVariants} initial="initial" animate="enter" exit="exit">
       {children}
     </motion.main>
   )
 }
 
-export default function App() {
+// The animated public website.
+function PublicSite() {
   const location = useLocation()
 
-  // Smooth scrolling via Lenis (respecting reduced-motion preference).
   useEffect(() => {
     if (usePrefersReducedMotion()) return
     const lenis = new Lenis({
@@ -68,7 +67,7 @@ export default function App() {
   }, [])
 
   return (
-    <>
+    <ContentProvider>
       <ScrollProgress />
       <ScrollToTop />
       <Navbar />
@@ -86,6 +85,21 @@ export default function App() {
       </AnimatePresence>
       <Footer />
       <WhatsAppFab />
-    </>
+    </ContentProvider>
   )
+}
+
+export default function App() {
+  const location = useLocation()
+
+  // The admin panel is a self-contained app (no public chrome, no Lenis).
+  if (location.pathname.startsWith('/admin')) {
+    return (
+      <Suspense fallback={<div className="flex min-h-screen items-center justify-center bg-cream" />}>
+        <AdminRoutes />
+      </Suspense>
+    )
+  }
+
+  return <PublicSite />
 }

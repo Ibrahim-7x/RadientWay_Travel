@@ -1,13 +1,15 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowUpRight } from 'lucide-react'
+import { ArrowUpRight, Phone } from 'lucide-react'
 import SectionHeading from '../ui/SectionHeading'
 import Card3D from '../ui/Card3D'
 import SmartImage from '../ui/SmartImage'
-import { destinations } from '../../data/destinations'
+import { useContent } from '../../context/ContentContext'
+import { company } from '../../data/company'
 import { stagger, viewportOnce } from '../../lib/motion'
 
 export default function PopularDestinations() {
+  const { destinations } = useContent()
   return (
     <section className="relative overflow-hidden bg-sand py-24 sm:py-28">
       <div className="container-x">
@@ -42,31 +44,42 @@ export default function PopularDestinations() {
               }}
             >
               <Card3D className="h-full">
-                <Link
-                  to={`/tours/${d.slug}`}
-                  className="group relative block h-80 overflow-hidden rounded-3xl shadow-navy"
-                  style={{ transform: 'translateZ(0)' }}
-                >
-                  <SmartImage
-                    src={d.image}
-                    alt={d.name}
-                    label={d.name}
-                    className="absolute inset-0 h-full w-full"
-                    imgClassName="transition-transform duration-[900ms] group-hover:scale-110"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-navy-950/90 via-navy-950/20 to-transparent" />
+                <div className="relative h-full" style={{ transform: 'translateZ(0)' }}>
+                  <Link
+                    to={`/tours/${d.slug}`}
+                    className="group relative block h-80 overflow-hidden rounded-3xl shadow-navy"
+                  >
+                    <SmartImage
+                      src={d.image}
+                      alt={d.name}
+                      label={d.name}
+                      className="absolute inset-0 h-full w-full"
+                      imgClassName="transition-transform duration-[900ms] group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-navy-950/90 via-navy-950/20 to-transparent" />
 
-                  <div className="absolute inset-x-0 bottom-0 p-6" style={{ transform: 'translateZ(40px)' }}>
-                    <span className="mb-2 inline-block rounded-full bg-gold-gradient px-3 py-1 text-xs font-semibold text-navy-950">
-                      From {d.priceFrom.toLocaleString()} AED
-                    </span>
-                    <h3 className="font-display text-2xl font-semibold text-white">{d.name}</h3>
-                    <p className="mt-1 flex items-center justify-between text-sm text-navy-100">
-                      {d.blurb}
-                      <ArrowUpRight className="h-5 w-5 translate-y-2 text-gold-400 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100" />
-                    </p>
-                  </div>
-                </Link>
+                    <div className="absolute inset-x-0 bottom-0 p-6" style={{ transform: 'translateZ(40px)' }}>
+                      <span className="mb-2 inline-block rounded-full bg-gold-gradient px-3 py-1 text-xs font-semibold text-navy-950">
+                        From {d.priceFrom.toLocaleString()} AED
+                      </span>
+                      <h3 className="font-display text-2xl font-semibold text-white">{d.name}</h3>
+                      <p className="mt-1 flex items-center justify-between text-sm text-navy-100">
+                        {d.blurb}
+                        <ArrowUpRight className="h-5 w-5 translate-y-2 text-gold-400 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100" />
+                      </p>
+                    </div>
+                  </Link>
+
+                  <a
+                    href={company.phoneHref}
+                    onClick={(e) => e.stopPropagation()}
+                    aria-label={`Call us about ${d.name}`}
+                    className="absolute right-4 top-4 z-10 inline-flex items-center gap-1.5 rounded-full bg-gold-gradient px-4 py-2 text-xs font-semibold text-navy-950 shadow-navy transition-transform duration-300 hover:scale-105"
+                    style={{ transform: 'translateZ(60px)' }}
+                  >
+                    <Phone className="h-4 w-4" /> Call
+                  </a>
+                </div>
               </Card3D>
             </motion.div>
           ))}

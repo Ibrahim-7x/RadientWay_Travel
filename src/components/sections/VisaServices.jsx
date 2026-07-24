@@ -1,10 +1,11 @@
 import { motion } from 'framer-motion'
 import SectionHeading from '../ui/SectionHeading'
 import AnimatedButton from '../ui/AnimatedButton'
-import { visas } from '../../data/visas'
+import { useContent } from '../../context/ContentContext'
 import { stagger, viewportOnce } from '../../lib/motion'
 
 export default function VisaServices() {
+  const { visas } = useContent()
   return (
     <section className="relative overflow-hidden bg-cream py-24 sm:py-28">
       <div className="container-x">

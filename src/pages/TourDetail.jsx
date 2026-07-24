@@ -1,10 +1,12 @@
+import { useEffect, useState } from 'react'
 import { useParams, Link, Navigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
-  MapPin, Moon, Users, Star, Check, Phone, ArrowLeft, Building2,
+  MapPin, Moon, Users, Star, Check, Phone, ArrowLeft, Building2, Loader2,
 } from 'lucide-react'
-import { getPackageBySlug } from '../data/packages'
 import { company } from '../data/company'
+import { api } from '../lib/api'
+import { useContent } from '../context/ContentContext'
 import SmartImage from '../components/ui/SmartImage'
 import AnimatedButton from '../components/ui/AnimatedButton'
 import StarRating from '../components/ui/StarRating'
@@ -12,7 +14,38 @@ import { fadeUp, stagger, viewportOnce } from '../lib/motion'
 
 export default function TourDetail() {
   const { slug } = useParams()
-  const pkg = getPackageBySlug(slug)
+  const { getPackageBySlug, loading: contentLoading } = useContent()
+  // Prefer already-loaded content; otherwise fetch this package by slug so
+  // direct links to newly-added packages resolve too.
+  const [pkg, setPkg] = useState(() => getPackageBySlug(slug))
+  const [fetching, setFetching] = useState(!pkg)
+
+  useEffect(() => {
+    const fromContent = getPackageBySlug(slug)
+    if (fromContent) {
+      setPkg(fromContent)
+      setFetching(false)
+      return
+    }
+    let alive = true
+    setFetching(true)
+    api
+      .get(`/packages/${slug}`, { auth: false })
+      .then((data) => alive && setPkg(data))
+      .catch(() => alive && setPkg(null))
+      .finally(() => alive && setFetching(false))
+    return () => {
+      alive = false
+    }
+  }, [slug, getPackageBySlug])
+
+  if (fetching || contentLoading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-gold-500" />
+      </div>
+    )
+  }
 
   if (!pkg) return <Navigate to="/tours" replace />
 

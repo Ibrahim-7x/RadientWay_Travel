@@ -2,13 +2,14 @@ import { motion } from 'framer-motion'
 import SectionHeading from '../ui/SectionHeading'
 import SmartImage from '../ui/SmartImage'
 import Counter from '../ui/Counter'
-import { whyChooseUs } from '../../data/services'
+import { useContent } from '../../context/ContentContext'
 import { getIcon } from '../../lib/icons'
 import { useParallax } from '../../hooks/useParallax'
 import { img } from '../../data/packages'
 import { stagger, fadeUp, viewportOnce } from '../../lib/motion'
 
 export default function WhyChooseUs() {
+  const { whyChooseUs } = useContent()
   const { ref, y } = useParallax(50)
 
   return (

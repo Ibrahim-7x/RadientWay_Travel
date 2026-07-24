@@ -5,12 +5,14 @@ import PageHero from '../components/ui/PageHero'
 import SectionHeading from '../components/ui/SectionHeading'
 import AnimatedButton from '../components/ui/AnimatedButton'
 import VisaDetailModal from '../components/ui/VisaDetailModal'
-import { visas, visaSteps } from '../data/visas'
+import { visaSteps } from '../data/visas'
 import { waLink } from '../data/company'
 import { img } from '../data/packages'
+import { useContent } from '../context/ContentContext'
 import { fadeUp, stagger, viewportOnce } from '../lib/motion'
 
 export default function VisaServicesPage() {
+  const { visas } = useContent()
   const [selected, setSelected] = useState(null)
 
   return (

@@ -1,10 +1,11 @@
 import { motion } from 'framer-motion'
 import SectionHeading from '../ui/SectionHeading'
-import { services } from '../../data/services'
+import { useContent } from '../../context/ContentContext'
 import { getIcon } from '../../lib/icons'
 import { stagger, viewportOnce } from '../../lib/motion'
 
 export default function ServiceLines() {
+  const { services } = useContent()
   return (
     <section className="relative py-24 sm:py-28">
       <div className="container-x">

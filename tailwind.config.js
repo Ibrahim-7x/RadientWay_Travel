@@ -36,7 +36,7 @@ export default {
         sand: '#f4eee0',
       },
       fontFamily: {
-        display: ['Fraunces', 'Playfair Display', 'serif'],
+        display: ['Playfair Display', 'Georgia', 'serif'],
         sans: ['Inter', 'system-ui', 'sans-serif'],
       },
       boxShadow: {

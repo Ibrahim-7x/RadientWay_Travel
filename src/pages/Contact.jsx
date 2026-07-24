@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Phone, Mail, MapPin, Clock, Send, CheckCircle2 } from 'lucide-react'
+import { Phone, Mail, MapPin, Clock, Send, CheckCircle2, Loader2 } from 'lucide-react'
 import PageHero from '../components/ui/PageHero'
 import { company } from '../data/company'
 import { getIcon } from '../lib/icons'
 import { img } from '../data/packages'
+import { api } from '../lib/api'
+import { useToast } from '../context/ToastContext'
 import { fadeUp, stagger, viewportOnce } from '../lib/motion'
 
 const contactItems = [
@@ -15,17 +17,26 @@ const contactItems = [
 ]
 
 export default function Contact() {
+  const toast = useToast()
   const [sent, setSent] = useState(false)
+  const [sending, setSending] = useState(false)
   const [form, setForm] = useState({ name: '', email: '', phone: '', message: '' })
 
   const update = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault()
-    // Client-only stub — wired to Express backend later.
-    setSent(true)
-    setForm({ name: '', email: '', phone: '', message: '' })
-    setTimeout(() => setSent(false), 4000)
+    setSending(true)
+    try {
+      await api.post('/contact', form, { auth: false })
+      setSent(true)
+      setForm({ name: '', email: '', phone: '', message: '' })
+      setTimeout(() => setSent(false), 4000)
+    } catch (err) {
+      toast.error(err.message || 'Could not send your message. Please try again.')
+    } finally {
+      setSending(false)
+    }
   }
 
   return (
@@ -122,9 +133,15 @@ export default function Contact() {
                   className="w-full resize-none rounded-2xl border border-navy-950/10 bg-cream px-4 py-3 text-sm text-navy-900 outline-none transition-all focus:border-gold-400 focus:ring-2 focus:ring-gold-200"
                 />
               </div>
-              <button type="submit" className="btn-gold w-full">
-                {sent ? <CheckCircle2 className="h-5 w-5" /> : <Send className="h-4 w-4" />}
-                {sent ? 'Message sent — thank you!' : 'Send message'}
+              <button type="submit" disabled={sending} className="btn-gold w-full disabled:opacity-60">
+                {sending ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : sent ? (
+                  <CheckCircle2 className="h-5 w-5" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+                {sending ? 'Sending…' : sent ? 'Message sent — thank you!' : 'Send message'}
               </button>
             </div>
           </motion.form>

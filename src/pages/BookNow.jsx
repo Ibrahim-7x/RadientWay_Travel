@@ -1,14 +1,20 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Check, ArrowRight, ArrowLeft, PartyPopper } from 'lucide-react'
+import { Check, ArrowRight, ArrowLeft, PartyPopper, Loader2 } from 'lucide-react'
 import PageHero from '../components/ui/PageHero'
-import { packages, img } from '../data/packages'
+import { img } from '../data/packages'
 import { company } from '../data/company'
+import { api } from '../lib/api'
+import { useContent } from '../context/ContentContext'
+import { useToast } from '../context/ToastContext'
 
 const steps = ['Destination', 'Trip details', 'Your info', 'Done']
 
 export default function BookNow() {
+  const { packages } = useContent()
+  const toast = useToast()
   const [step, setStep] = useState(0)
+  const [submitting, setSubmitting] = useState(false)
   const [data, setData] = useState({
     pkg: '',
     date: '',
@@ -20,8 +26,38 @@ export default function BookNow() {
   })
 
   const set = (k, v) => setData((d) => ({ ...d, [k]: v }))
-  const next = () => setStep((s) => Math.min(s + 1, steps.length - 1))
   const back = () => setStep((s) => Math.max(s - 1, 0))
+
+  // On the final info step, submit the booking to the API before advancing.
+  const next = async () => {
+    if (step === 2) {
+      setSubmitting(true)
+      try {
+        const selected = packages.find((p) => p.slug === data.pkg)
+        await api.post(
+          '/bookings',
+          {
+            packageSlug: data.pkg || null,
+            packageName: selected?.name || null,
+            name: data.name,
+            email: data.email,
+            phone: data.phone,
+            date: data.date || null,
+            travellers: Number(data.travellers) || 1,
+            occupancy: data.occupancy,
+          },
+          { auth: false },
+        )
+        setStep(3)
+      } catch (e) {
+        toast.error(e.message || 'Could not submit your request. Please try again.')
+      } finally {
+        setSubmitting(false)
+      }
+      return
+    }
+    setStep((s) => Math.min(s + 1, steps.length - 1))
+  }
 
   const canProceed =
     (step === 0 && data.pkg) ||
@@ -199,11 +235,11 @@ export default function BookNow() {
                 </button>
                 <button
                   onClick={next}
-                  disabled={!canProceed}
+                  disabled={!canProceed || submitting}
                   className="btn-gold disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  {step === 2 ? 'Submit request' : 'Continue'}
-                  <ArrowRight className="h-4 w-4" />
+                  {step === 2 ? (submitting ? 'Submitting…' : 'Submit request') : 'Continue'}
+                  {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
                 </button>
               </div>
             )}

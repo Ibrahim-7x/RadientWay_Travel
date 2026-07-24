@@ -2,10 +2,11 @@ import { motion } from 'framer-motion'
 import SectionHeading from '../ui/SectionHeading'
 import TourCard from '../ui/TourCard'
 import AnimatedButton from '../ui/AnimatedButton'
-import { featuredPackages } from '../../data/packages'
+import { useContent } from '../../context/ContentContext'
 import { stagger, viewportOnce } from '../../lib/motion'
 
 export default function FeaturedTours() {
+  const { featuredPackages } = useContent()
   return (
     <section className="relative py-24 sm:py-28">
       <div className="container-x">

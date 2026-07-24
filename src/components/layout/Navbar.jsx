@@ -1,16 +1,25 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Menu, X, Phone } from 'lucide-react'
+import { Menu, X, Phone, ChevronDown } from 'lucide-react'
 import { navLinks } from '../../data/navigation'
-import { company } from '../../data/company'
+import { telHref } from '../../data/company'
+import { useContent } from '../../context/ContentContext'
 import AnimatedButton from '../ui/AnimatedButton'
 import Logo from './Logo'
 
 export default function Navbar() {
+  const { company } = useContent()
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
+  const [contactOpen, setContactOpen] = useState(false)
   const location = useLocation()
+
+  // Department contact numbers shown in the navbar dropdown.
+  const contacts = [
+    { label: 'Holidays & Tours', phone: company.holidaysPhone || company.phone },
+    { label: 'Visa Services', phone: company.visaPhone || company.phone },
+  ]
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40)
@@ -65,15 +74,63 @@ export default function Navbar() {
           </ul>
 
           <div className="hidden items-center gap-4 lg:flex">
-            <a
-              href={company.phoneHref}
-              className={`flex items-center gap-2 text-sm font-medium transition-colors ${
-                scrolled ? 'text-navy-800 hover:text-gold-600' : 'text-white/90 hover:text-gold-400'
-              }`}
+            {/* Contact dropdown — hover (or focus/click) reveals both numbers */}
+            <div
+              className="relative"
+              onMouseEnter={() => setContactOpen(true)}
+              onMouseLeave={() => setContactOpen(false)}
             >
-              <Phone className="h-4 w-4 text-gold-500" />
-              {company.phone}
-            </a>
+              <button
+                type="button"
+                onClick={() => setContactOpen((v) => !v)}
+                onFocus={() => setContactOpen(true)}
+                aria-expanded={contactOpen}
+                aria-haspopup="true"
+                className={`flex items-center gap-2 text-sm font-medium transition-colors ${
+                  scrolled ? 'text-navy-800 hover:text-gold-600' : 'text-white/90 hover:text-gold-400'
+                }`}
+              >
+                <Phone className="h-4 w-4 text-gold-500" />
+                Contact
+                <ChevronDown
+                  className={`h-3.5 w-3.5 transition-transform duration-300 ${contactOpen ? 'rotate-180' : ''}`}
+                />
+              </button>
+
+              <AnimatePresence>
+                {contactOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8, scale: 0.97 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 8, scale: 0.97 }}
+                    transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+                    className="absolute right-0 top-full z-50 w-64 pt-3"
+                  >
+                    {/* transparent pt-3 above bridges the gap so hover doesn't drop */}
+                    <div className="overflow-hidden rounded-2xl bg-white p-2 shadow-card-hover ring-1 ring-navy-950/5">
+                      {contacts.map((c) => (
+                        <a
+                          key={c.label}
+                          href={telHref(c.phone)}
+                          className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-gold-50"
+                        >
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gold-gradient text-white">
+                            <Phone className="h-4 w-4" />
+                          </span>
+                          <span className="leading-tight">
+                            <span className="block text-[11px] font-medium uppercase tracking-wide text-navy-400">
+                              {c.label}
+                            </span>
+                            <span className="block text-sm font-semibold text-navy-900">{c.phone}</span>
+                          </span>
+                        </a>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
             <AnimatedButton to="/book" showArrow>
               Book Now
             </AnimatedButton>
@@ -151,13 +208,25 @@ export default function Navbar() {
               </motion.ul>
 
               <div className="mt-auto flex flex-col gap-4">
-                <a
-                  href={company.phoneHref}
-                  className="flex items-center gap-2 text-sm text-white/80"
-                >
-                  <Phone className="h-4 w-4 text-gold-400" />
-                  {company.phone}
-                </a>
+                <div className="flex flex-col gap-3">
+                  {contacts.map((c) => (
+                    <a
+                      key={c.label}
+                      href={telHref(c.phone)}
+                      className="flex items-center gap-3 text-white/80 transition-colors hover:text-white"
+                    >
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-gold-400">
+                        <Phone className="h-4 w-4" />
+                      </span>
+                      <span className="leading-tight">
+                        <span className="block text-[11px] uppercase tracking-wide text-white/50">
+                          {c.label}
+                        </span>
+                        <span className="block text-sm font-medium text-white">{c.phone}</span>
+                      </span>
+                    </a>
+                  ))}
+                </div>
                 <AnimatedButton to="/book" showArrow className="w-full">
                   Book Now
                 </AnimatedButton>

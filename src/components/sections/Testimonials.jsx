@@ -3,10 +3,11 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Quote, ChevronLeft, ChevronRight } from 'lucide-react'
 import SectionHeading from '../ui/SectionHeading'
 import StarRating from '../ui/StarRating'
-import { testimonials } from '../../data/testimonials'
+import { useContent } from '../../context/ContentContext'
 import { company } from '../../data/company'
 
 export default function Testimonials() {
+  const { testimonials } = useContent()
   const [index, setIndex] = useState(0)
   const [dir, setDir] = useState(1)
 
@@ -23,7 +24,8 @@ export default function Testimonials() {
     return () => clearInterval(id)
   }, [index, go])
 
-  const t = testimonials[index]
+  const t = testimonials[index] || testimonials[0]
+  if (!t) return null
 
   return (
     <section className="relative overflow-hidden bg-navy-950 py-24 text-white sm:py-28">

@@ -1,0 +1,169 @@
+// RadiantWay Travel — data model.
+// SQLite via Prisma. Array/object fields (galleries, tags, itineraries…) are
+// stored as JSON strings in TEXT columns and (de)serialised in the app layer
+// (see src/lib/json.js). This keeps the schema portable and avoids relying on
+// SQLite JSON column support.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ── Auth ────────────────────────────────────────────────────────────────────
+model AdminUser {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         String   @default("admin") // admin | editor
+  active       Boolean  @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// ── Content: Tour packages ───────────────────────────────────────────────────
+model Package {
+  id         Int      @id @default(autoincrement())
+  slug       String   @unique
+  name       String
+  country    String
+  region     String
+  city       String
+  tagline    String
+  nights     Int
+  days       Int
+  occupancy  String
+  price      Int
+  currency   String   @default("AED")
+  hotelStars Int      @default(4)
+  rating     Float    @default(5)
+  featured   Boolean  @default(false)
+  published  Boolean  @default(true)
+  order      Int      @default(0)
+  image      String
+  gallery    String   @default("[]") // JSON string[]
+  tags       String   @default("[]") // JSON string[]
+  includes   String   @default("[]") // JSON string[]
+  highlights String   @default("[]") // JSON string[]
+  itinerary  String   @default("[]") // JSON {day,title,detail}[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+// ── Content: Popular destinations ────────────────────────────────────────────
+model Destination {
+  id          Int      @id @default(autoincrement())
+  name        String
+  blurb       String
+  image       String
+  priceFrom   Int
+  packageSlug String?  // optional link to a Package.slug
+  published   Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ── Content: Visa services ───────────────────────────────────────────────────
+model Visa {
+  id                Int      @id @default(autoincrement())
+  country           String
+  flag              String   @default("")
+  type              String
+  processing        String
+  note              String   @default("")
+  price             String   @default("")
+  about             String   @default("")
+  documentsRequired String   @default("[]") // JSON string[]
+  documentsProvided String   @default("[]") // JSON string[]
+  published         Boolean  @default(true)
+  order             Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+// ── Content: Testimonials ────────────────────────────────────────────────────
+model Testimonial {
+  id        Int      @id @default(autoincrement())
+  name      String
+  trip      String
+  rating    Int      @default(5)
+  quote     String
+  published Boolean  @default(true)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ── Content: FAQs ────────────────────────────────────────────────────────────
+model Faq {
+  id        Int      @id @default(autoincrement())
+  question  String
+  answer    String
+  published Boolean  @default(true)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ── Content: Services / "Why choose us" cards ────────────────────────────────
+model Service {
+  id          Int      @id @default(autoincrement())
+  icon        String   @default("Globe")
+  title       String
+  description String
+  group       String   @default("service") // service | why
+  published   Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ── Leads: Booking requests ──────────────────────────────────────────────────
+model Booking {
+  id          Int      @id @default(autoincrement())
+  packageSlug String?
+  packageName String?
+  name        String
+  email       String
+  phone       String
+  date        String?  // preferred start date (yyyy-mm-dd)
+  travellers  Int      @default(1)
+  occupancy   String   @default("")
+  notes       String   @default("")
+  status      String   @default("new") // new | contacted | confirmed | cancelled
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ── Leads: Contact messages ──────────────────────────────────────────────────
+model Lead {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String
+  phone     String   @default("")
+  message   String
+  status    String   @default("new") // new | read | replied | archived
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ── Leads: Newsletter subscribers ────────────────────────────────────────────
+model Subscriber {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+// ── Site settings (company info) — key/value with JSON values ────────────────
+model Setting {
+  key       String   @id
+  value     String   @default("{}") // JSON blob
+  updatedAt DateTime @updatedAt
+}
