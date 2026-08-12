@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Phone, Mail, MapPin, Clock, Send, CheckCircle2, Loader2 } from 'lucide-react'
 import PageHero from '../components/ui/PageHero'
@@ -18,9 +19,18 @@ const contactItems = [
 
 export default function Contact() {
   const toast = useToast()
+  const [params] = useSearchParams()
   const [sent, setSent] = useState(false)
   const [sending, setSending] = useState(false)
-  const [form, setForm] = useState({ name: '', email: '', phone: '', message: '' })
+  // Tour/Umrah pages link here with ?enquiry=<package name> so the message
+  // arrives already saying what the traveller is asking about.
+  const enquiry = params.get('enquiry')
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    message: enquiry ? `I'd like to enquire about: ${enquiry}\n\n` : '',
+  })
 
   const update = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
 

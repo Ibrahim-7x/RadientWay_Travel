@@ -1,20 +1,25 @@
 import { useEffect, useState } from 'react'
-import { useParams, Link, Navigate } from 'react-router-dom'
+import { useParams, useLocation, Link, Navigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
-  MapPin, Moon, Users, Star, Check, Phone, ArrowLeft, Building2, Loader2,
+  MapPin, Moon, Users, Star, Check, ArrowLeft, Building2, Loader2,
 } from 'lucide-react'
 import { company } from '../data/company'
 import { api } from '../lib/api'
+import { isUmrahPackage, packagePath, imgSrcSet } from '../data/packages'
 import { useContent } from '../context/ContentContext'
 import SmartImage from '../components/ui/SmartImage'
 import AnimatedButton from '../components/ui/AnimatedButton'
+import WhatsAppIcon from '../components/ui/WhatsAppIcon'
 import StarRating from '../components/ui/StarRating'
 import { fadeUp, stagger, viewportOnce } from '../lib/motion'
 
 export default function TourDetail() {
   const { slug } = useParams()
+  const { pathname } = useLocation()
   const { getPackageBySlug, loading: contentLoading } = useContent()
+  // Which listing this page hangs off — /tours or /umrah.
+  const onUmrahRoute = pathname.startsWith('/umrah')
   // Prefer already-loaded content; otherwise fetch this package by slug so
   // direct links to newly-added packages resolve too.
   const [pkg, setPkg] = useState(() => getPackageBySlug(slug))
@@ -47,7 +52,16 @@ export default function TourDetail() {
     )
   }
 
-  if (!pkg) return <Navigate to="/tours" replace />
+  const listingPath = onUmrahRoute ? '/umrah' : '/tours'
+
+  if (!pkg) return <Navigate to={listingPath} replace />
+
+  // Keep the URL and the highlighted nav tab in sync with the package's
+  // category, so older /tours/<umrah-slug> links land in the right place.
+  const canonicalPath = packagePath(pkg)
+  if (canonicalPath !== pathname) return <Navigate to={canonicalPath} replace />
+
+  const umrah = isUmrahPackage(pkg)
 
   const facts = [
     { icon: Moon, label: 'Duration', value: `${pkg.nights} Nights / ${pkg.days} Days` },
@@ -59,13 +73,23 @@ export default function TourDetail() {
   return (
     <>
       {/* Hero */}
-      <section className="relative flex min-h-[70vh] items-end overflow-hidden bg-navy-950 pb-14 pt-32">
-        <img src={pkg.image} alt={pkg.name} className="absolute inset-0 h-full w-full animate-kenburns object-cover" />
+      <section className="relative flex min-h-[70svh] items-end overflow-hidden bg-navy-950 pb-14 pt-32">
+        <img
+          src={pkg.image}
+          srcSet={imgSrcSet(pkg.image)}
+          sizes="100vw"
+          alt={pkg.name}
+          loading="eager"
+          fetchpriority="high"
+          decoding="async"
+          className="absolute inset-0 h-full w-full animate-kenburns object-cover"
+        />
         <div className="absolute inset-0 bg-gradient-to-t from-navy-950 via-navy-950/60 to-navy-950/30" />
 
         <div className="container-x relative z-10">
-          <Link to="/tours" className="mb-5 inline-flex items-center gap-2 text-sm text-navy-100 hover:text-gold-400">
-            <ArrowLeft className="h-4 w-4" /> Back to all packages
+          <Link to={listingPath} className="mb-5 inline-flex items-center gap-2 text-sm text-navy-100 hover:text-gold-400">
+            <ArrowLeft className="h-4 w-4" />
+            {umrah ? 'Back to all Umrah packages' : 'Back to all packages'}
           </Link>
           <div className="flex flex-wrap gap-2">
             {pkg.tags?.map((t) => (
@@ -193,14 +217,19 @@ export default function TourDetail() {
                 ))}
               </ul>
 
-              <AnimatedButton to="/book" showArrow className="mt-7 w-full">
-                Book this package
+              {/* ?enquiry= prefills the contact form with this package */}
+              <AnimatedButton
+                to={`/contact?enquiry=${encodeURIComponent(pkg.name)}`}
+                showArrow
+                className="mt-7 w-full"
+              >
+                Enquire about this package
               </AnimatedButton>
               <a
                 href={company.whatsapp}
                 className="mt-3 flex w-full items-center justify-center gap-2 rounded-full border border-navy-950/10 py-3 text-sm font-semibold text-navy-900 transition-colors hover:border-gold-400 hover:text-gold-700"
               >
-                <Phone className="h-4 w-4" /> Enquire on WhatsApp
+                <WhatsAppIcon className="h-4 w-4" /> Enquire on WhatsApp
               </a>
             </div>
           </aside>

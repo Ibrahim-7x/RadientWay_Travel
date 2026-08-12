@@ -23,7 +23,7 @@ npm run preview  # preview the production build
 - **Tour Packages** — filterable / sortable grid with animated layout transitions.
 - **Tour Detail** — hero, quick facts, highlights, day-by-day itinerary timeline, sticky booking card.
 - **Visa Services** — visa cards + 4-step process.
-- **About**, **Contact** (animated form + map), **Book Now** (multi-step animated form), **404**.
+- **About**, **Contact** (animated enquiry form + map — all enquiries land here), **404**.
 
 Global: Lenis smooth scroll, top scroll-progress bar, page transitions, WhatsApp FAB,
 `prefers-reduced-motion` support, fully responsive.

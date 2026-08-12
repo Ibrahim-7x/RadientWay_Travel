@@ -9,12 +9,12 @@ export const packages = crud({
   orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
   required: ['slug', 'name', 'country', 'region', 'city', 'price'],
   allowed: [
-    'slug', 'name', 'country', 'region', 'city', 'tagline', 'nights', 'days',
-    'occupancy', 'price', 'currency', 'hotelStars', 'rating', 'featured',
+    'slug', 'name', 'category', 'country', 'region', 'city', 'tagline', 'nights',
+    'days', 'occupancy', 'price', 'currency', 'hotelStars', 'rating', 'featured',
     'published', 'order', 'image', 'gallery', 'tags', 'includes', 'highlights',
     'itinerary',
   ],
-  defaults: { currency: 'AED', hotelStars: 4, rating: 5, featured: false, published: true },
+  defaults: { category: 'tour', currency: 'AED', hotelStars: 4, rating: 5, featured: false, published: true },
 })
 
 export const destinations = crud({

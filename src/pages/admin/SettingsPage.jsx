@@ -71,11 +71,11 @@ export default function SettingsPage() {
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <Field label="Phone" hint="Main display number"><TextInput value={form.phone || ''} onChange={(e) => set('phone', e.target.value)} /></Field>
             <Field label="Phone link" hint="e.g. tel:+971..."><TextInput value={form.phoneHref || ''} onChange={(e) => set('phoneHref', e.target.value)} /></Field>
-            <Field label="Holidays & Tours number" hint="Shown in the navbar Contact dropdown"><TextInput value={form.holidaysPhone || ''} onChange={(e) => set('holidaysPhone', e.target.value)} placeholder="+971 ..." /></Field>
-            <Field label="Visa Services number" hint="Shown in the navbar Contact dropdown"><TextInput value={form.visaPhone || ''} onChange={(e) => set('visaPhone', e.target.value)} placeholder="+971 ..." /></Field>
+            <Field label="Holidays & Tours number" hint="Listed in the navbar; also the Call button on destination cards"><TextInput value={form.holidaysPhone || ''} onChange={(e) => set('holidaysPhone', e.target.value)} placeholder="+971 ..." /></Field>
+            <Field label="Visa Services number" hint="Listed in the navbar beside the Holidays number"><TextInput value={form.visaPhone || ''} onChange={(e) => set('visaPhone', e.target.value)} placeholder="+971 ..." /></Field>
             <Field label="Email"><TextInput value={form.email || ''} onChange={(e) => set('email', e.target.value)} /></Field>
             <Field label="Email link" hint="e.g. mailto:info@..."><TextInput value={form.emailHref || ''} onChange={(e) => set('emailHref', e.target.value)} /></Field>
-            <Field label="WhatsApp link"><TextInput value={form.whatsapp || ''} onChange={(e) => set('whatsapp', e.target.value)} /></Field>
+            <Field label="WhatsApp link" hint="Drives every WhatsApp Call button — e.g. https://wa.me/9715…"><TextInput value={form.whatsapp || ''} onChange={(e) => set('whatsapp', e.target.value)} /></Field>
             <Field label="Hours"><TextInput value={form.hours || ''} onChange={(e) => set('hours', e.target.value)} /></Field>
             <Field label="Address" className="sm:col-span-2"><TextArea rows={2} value={form.address || ''} onChange={(e) => set('address', e.target.value)} /></Field>
             <Field label="Review URL"><TextInput value={form.reviewUrl || ''} onChange={(e) => set('reviewUrl', e.target.value)} /></Field>

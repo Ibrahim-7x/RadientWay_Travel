@@ -13,9 +13,11 @@ export default function Home() {
   return (
     <>
       <Hero />
+      {/* Packages lead the page: travellers land on Handpicked destinations
+          straight after the hero, with the rest of the site below. */}
+      <PopularDestinations />
       <Stats />
       <ServiceLines />
-      <PopularDestinations />
       <FeaturedTours />
       <WhyChooseUs />
       <VisaServices />

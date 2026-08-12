@@ -10,6 +10,12 @@ const publishedCol = {
   render: (r) => <Badge tone={r.published ? 'published' : 'draft'}>{r.published ? 'Published' : 'Draft'}</Badge>,
 }
 
+// Decides which public listing a package appears on: /tours or /umrah.
+const categoryOptions = [
+  { value: 'tour', label: 'Tour package (/tours)' },
+  { value: 'umrah', label: 'Umrah package (/umrah)' },
+]
+
 const iconOptions = [
   'Map', 'Stamp', 'Plane', 'BedDouble', 'CarFront', 'Camera', 'CreditCard',
   'FerrisWheel', 'MoonStar', 'HeartHandshake', 'ShieldCheck', 'Clock', 'Wallet', 'Globe',
@@ -20,8 +26,8 @@ export const resources = {
     key: 'packages',
     path: 'packages',
     singular: 'Package',
-    title: 'Tour Packages',
-    subtitle: 'Create and manage the tour packages shown across the site.',
+    title: 'Packages',
+    subtitle: 'Create and manage the tour and Umrah packages shown across the site.',
     columns: [
       { key: 'name', label: 'Name', render: (r) => (
         <div className="flex items-center gap-3">
@@ -32,20 +38,26 @@ export const resources = {
           </div>
         </div>
       ) },
+      { key: 'category', label: 'Type', render: (r) => (
+        <Badge tone={r.category === 'umrah' ? 'contacted' : 'new'}>
+          {r.category === 'umrah' ? 'Umrah' : 'Tour'}
+        </Badge>
+      ) },
       { key: 'region', label: 'Region' },
       { key: 'price', label: 'Price', render: (r) => `${r.currency} ${Number(r.price).toLocaleString()}` },
       { key: 'featured', label: 'Featured', render: (r) => (r.featured ? <Badge tone="confirmed">Featured</Badge> : '—') },
       publishedCol,
     ],
     defaults: {
-      slug: '', name: '', country: '', region: '', city: '', tagline: '',
+      slug: '', name: '', category: 'tour', country: '', region: '', city: '', tagline: '',
       nights: 3, days: 4, occupancy: 'Twin sharing', price: 1000, currency: 'AED',
       hotelStars: 4, rating: 5, featured: false, published: true, order: 0,
       image: '', gallery: [], tags: [], includes: [], highlights: [], itinerary: [],
     },
     fields: [
       { name: 'name', label: 'Package name', type: 'text', required: true, colSpan: 2 },
-      { name: 'slug', label: 'Slug (URL)', type: 'text', required: true, hint: 'lowercase-with-dashes — used in /tours/<slug>' },
+      { name: 'slug', label: 'Slug (URL)', type: 'text', required: true, hint: 'lowercase-with-dashes — used in /tours/<slug> or /umrah/<slug>' },
+      { name: 'category', label: 'Package type', type: 'select', options: categoryOptions, hint: 'Umrah packages appear on the Umrah tab only' },
       { name: 'tagline', label: 'Tagline', type: 'text', colSpan: 2 },
       { name: 'country', label: 'Country', type: 'text', required: true },
       { name: 'region', label: 'Region', type: 'text', required: true, hint: 'e.g. Caucasus, Europe, Middle East' },

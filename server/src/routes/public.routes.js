@@ -4,6 +4,7 @@ import * as bookings from '../controllers/bookings.controller.js'
 import * as leads from '../controllers/leads.controller.js'
 import * as subscribers from '../controllers/subscribers.controller.js'
 import { getCompany } from '../controllers/settings.controller.js'
+import { getGoogleRating } from '../controllers/reviews.controller.js'
 
 // Read-only content + public form submissions. No auth.
 const router = Router()
@@ -17,6 +18,7 @@ router.get('/testimonials', R.testimonials.listPublished)
 router.get('/faqs', R.faqs.listPublished)
 router.get('/services', R.services.listPublished)
 router.get('/settings', getCompany)
+router.get('/reviews/google', getGoogleRating)
 
 // Submissions
 router.post('/bookings', bookings.create)

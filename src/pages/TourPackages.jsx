@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { SlidersHorizontal } from 'lucide-react'
 import PageHero from '../components/ui/PageHero'
@@ -15,12 +16,23 @@ const sortOptions = [
 ]
 
 export default function TourPackages() {
-  const { packages, regions } = useContent()
-  const [region, setRegion] = useState('All')
+  // Umrah packages are deliberately excluded — they have their own /umrah page.
+  const { tourPackages, regions } = useContent()
+  const [params] = useSearchParams()
+  const regionParam = params.get('region')
+  const [region, setRegion] = useState(regionParam || 'All')
   const [sort, setSort] = useState('featured')
 
+  // The navbar's Tour Packages dropdown links here as /tours?region=Europe, so
+  // the filter follows the URL. Re-checked when regions arrive from the API,
+  // since an unknown region would otherwise filter everything out.
+  useEffect(() => {
+    if (!regionParam) return
+    setRegion(regions.includes(regionParam) ? regionParam : 'All')
+  }, [regionParam, regions])
+
   const filtered = useMemo(() => {
-    let list = packages.filter((p) => region === 'All' || p.region === region)
+    let list = tourPackages.filter((p) => region === 'All' || p.region === region)
     switch (sort) {
       case 'price-asc':
         list = [...list].sort((a, b) => a.price - b.price)
@@ -35,7 +47,7 @@ export default function TourPackages() {
         list = [...list].sort((a, b) => (b.featured === a.featured ? 0 : b.featured ? 1 : -1))
     }
     return list
-  }, [region, sort, packages])
+  }, [region, sort, tourPackages])
 
   return (
     <>

@@ -8,9 +8,11 @@
     --navy: #0b1a2f;
   }
 
+  /* text-rendering: optimizeLegibility was here on the universal selector — it
+     forces kerning/ligature layout on every node and measurably slows text
+     paint on long pages for a difference nobody can see at these sizes. */
   * {
     -webkit-font-smoothing: antialiased;
-    text-rendering: optimizeLegibility;
   }
 
   html {
@@ -63,6 +65,10 @@
 
   .btn-navy {
     @apply btn bg-navy-950 text-white hover:bg-navy-800 hover:-translate-y-0.5;
+  }
+
+  .btn-whatsapp {
+    @apply btn bg-[#25D366] text-white shadow-lg shadow-[#25D366]/30 hover:bg-[#1EBE5A] hover:-translate-y-0.5;
   }
 
   .eyebrow {

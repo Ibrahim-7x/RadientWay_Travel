@@ -1,25 +1,55 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Menu, X, Phone, ChevronDown } from 'lucide-react'
-import { navLinks } from '../../data/navigation'
-import { telHref } from '../../data/company'
+import { Menu, X, Phone, ArrowRight } from 'lucide-react'
+import { navLinks, primaryNavLinks } from '../../data/navigation'
+import { telHref, waCallLink } from '../../data/company'
+import { packagePath } from '../../data/packages'
 import { useContent } from '../../context/ContentContext'
 import AnimatedButton from '../ui/AnimatedButton'
+import WhatsAppIcon from '../ui/WhatsAppIcon'
+import NavDropdown from './NavDropdown'
 import Logo from './Logo'
 
 export default function Navbar() {
-  const { company } = useContent()
+  const { company, regions, umrahPackages, visas } = useContent()
   const [scrolled, setScrolled] = useState(false)
   const [open, setOpen] = useState(false)
-  const [contactOpen, setContactOpen] = useState(false)
   const location = useLocation()
 
-  // Department contact numbers shown in the navbar dropdown.
+  // Submenus for the three catalogue tabs, keyed by the tab's path. Built from
+  // the same content the pages use, so anything added in the admin panel shows
+  // up here too. The first row is always the section index.
+  const submenus = {
+    '/tours': [
+      { label: 'All tour packages', to: '/tours', muted: true },
+      ...regions
+        .filter((r) => r !== 'All')
+        .map((r) => ({ label: r, to: `/tours?region=${encodeURIComponent(r)}` })),
+    ],
+    '/umrah': [
+      { label: 'All Umrah packages', to: '/umrah', muted: true },
+      ...umrahPackages.map((p) => ({ label: p.name, to: packagePath(p) })),
+    ],
+    '/visa': [
+      { label: 'All visa services', to: '/visa', muted: true },
+      ...visas.map((v) => ({
+        label: `${v.flag ? `${v.flag}  ` : ''}${v.country}`,
+        to: `/visa?country=${encodeURIComponent(v.country)}`,
+      })),
+    ],
+  }
+
+  // Department contact numbers, listed in the mobile drawer. The desktop bar
+  // shows the single general enquiries number instead.
   const contacts = [
     { label: 'Holidays & Tours', phone: company.holidaysPhone || company.phone },
     { label: 'Visa Services', phone: company.visaPhone || company.phone },
   ]
+
+  // Opens the WhatsApp chat with a call request prefilled — wa.me has no
+  // deep link that dials directly, so the caller taps the call icon there.
+  const waCallHref = waCallLink(company)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40)
@@ -28,8 +58,9 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  // Close the mobile drawer on navigation.
-  useEffect(() => setOpen(false), [location.pathname])
+  // Close the mobile drawer on navigation. Watches the query string too, since
+  // submenu links like /tours?region=Europe don't change the pathname.
+  useEffect(() => setOpen(false), [location.pathname, location.search])
 
   return (
     <>
@@ -43,107 +74,113 @@ export default function Navbar() {
             : 'bg-transparent py-5'
         }`}
       >
-        <nav className="container-x flex items-center justify-between">
-          <Link to="/" className="flex items-center" aria-label="RadiantWay Travel home">
+        {/* Tighter gutter below 360px buys back the room the three contact
+            actions need. Written as max-[359px] rather than a min-width
+            override: Tailwind emits arbitrary media variants after the named
+            sm:/lg: ones, so a min-[360px] rule would also win at desktop and
+            collapse the container gutter. A max-width query can't leak up. */}
+        <nav className="container-x flex items-center justify-between gap-1.5 max-[359px]:px-3 sm:gap-3">
+          <Link to="/" className="flex shrink-0 items-center" aria-label="RadiantWay Travel home">
             <Logo
-              className="h-12 w-auto sm:h-14"
+              className="h-9 w-auto sm:h-12 lg:h-14"
               markColor={scrolled ? '#0B1A2F' : '#E0A82E'}
               travelColor={scrolled ? '#E0A82E' : '#0B1A2F'}
             />
           </Link>
 
-          <ul className="hidden items-center gap-8 lg:flex">
-            {navLinks.map((link) => (
+          {/* Four catalogue tabs only — Home is the logo, About sits in the
+              drawer and footer. Fewer tabs means room to breathe at lg. */}
+          <ul className="hidden items-center gap-7 lg:flex xl:gap-9">
+            {primaryNavLinks.map((link) => (
               <li key={link.to}>
-                <NavLink
-                  to={link.to}
-                  className={({ isActive }) =>
-                    `link-underline text-sm font-medium tracking-wide transition-colors ${
-                      isActive
-                        ? 'text-gold-500'
-                        : scrolled
-                        ? 'text-navy-700 hover:text-navy-950'
-                        : 'text-white/90 hover:text-white'
-                    }`
-                  }
-                >
-                  {link.label}
-                </NavLink>
+                {submenus[link.to] ? (
+                  <NavDropdown link={link} items={submenus[link.to]} scrolled={scrolled} />
+                ) : (
+                  <NavLink
+                    to={link.to}
+                    className={({ isActive }) =>
+                      `link-underline text-sm font-medium tracking-wide transition-colors ${
+                        isActive
+                          ? 'text-gold-500'
+                          : scrolled
+                          ? 'text-navy-700 hover:text-navy-950'
+                          : 'text-white/90 hover:text-white'
+                      }`
+                    }
+                  >
+                    {link.label}
+                  </NavLink>
+                )}
               </li>
             ))}
           </ul>
 
-          <div className="hidden items-center gap-4 lg:flex">
-            {/* Contact dropdown — hover (or focus/click) reveals both numbers */}
-            <div
-              className="relative"
-              onMouseEnter={() => setContactOpen(true)}
-              onMouseLeave={() => setContactOpen(false)}
+          {/* The three contact actions never collapse — they stay on the bar at
+              every width, and only scale down. Nav links are what move into the
+              drawer instead. shrink-0 keeps them at full size so the logo is
+              what yields if space runs out. */}
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-3 lg:gap-4">
+            {/* A single general enquiries number — one short line, so it fits
+                even on a phone. The drawer still lists the two department
+                lines, where there's room for both. */}
+            {/* py-3 is a tap target, not spacing: the label is 11px tall, so
+                without it this dials-out link was an 11px-high hit area on a
+                phone. The padding stays inside the 36px button row height, so
+                the bar doesn't grow. */}
+            <a
+              href={telHref(company.phone)}
+              aria-label={`Call us for enquiries on ${company.phone}`}
+              className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap py-3 leading-none transition-colors lg:gap-2 ${
+                scrolled ? 'text-navy-800 hover:text-gold-600' : 'text-white/90 hover:text-gold-300'
+              }`}
             >
-              <button
-                type="button"
-                onClick={() => setContactOpen((v) => !v)}
-                onFocus={() => setContactOpen(true)}
-                aria-expanded={contactOpen}
-                aria-haspopup="true"
-                className={`flex items-center gap-2 text-sm font-medium transition-colors ${
-                  scrolled ? 'text-navy-800 hover:text-gold-600' : 'text-white/90 hover:text-gold-400'
-                }`}
-              >
-                <Phone className="h-4 w-4 text-gold-500" />
-                Contact
-                <ChevronDown
-                  className={`h-3.5 w-3.5 transition-transform duration-300 ${contactOpen ? 'rotate-180' : ''}`}
-                />
-              </button>
+              <Phone className="hidden h-3.5 w-3.5 shrink-0 text-gold-500 sm:block" />
+              <span className="hidden text-[10px] font-medium uppercase tracking-wide opacity-60 lg:block">
+                Inquiries
+              </span>
+              <span className="text-[11px] font-semibold max-[359px]:text-[10px] sm:text-xs">
+                {company.phone}
+              </span>
+            </a>
 
-              <AnimatePresence>
-                {contactOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 8, scale: 0.97 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 8, scale: 0.97 }}
-                    transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-                    className="absolute right-0 top-full z-50 w-64 pt-3"
-                  >
-                    {/* transparent pt-3 above bridges the gap so hover doesn't drop */}
-                    <div className="overflow-hidden rounded-2xl bg-white p-2 shadow-card-hover ring-1 ring-navy-950/5">
-                      {contacts.map((c) => (
-                        <a
-                          key={c.label}
-                          href={telHref(c.phone)}
-                          className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-gold-50"
-                        >
-                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gold-gradient text-white">
-                            <Phone className="h-4 w-4" />
-                          </span>
-                          <span className="leading-tight">
-                            <span className="block text-[11px] font-medium uppercase tracking-wide text-navy-400">
-                              {c.label}
-                            </span>
-                            <span className="block text-sm font-semibold text-navy-900">{c.phone}</span>
-                          </span>
-                        </a>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+            {/* Logo-only — the label lives in aria-label/title for screen
+                readers and hover, matching the height of the Enquire button. */}
+            <AnimatedButton
+              href={waCallHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              variant="whatsapp"
+              className="h-9 w-9 shrink-0 p-0 sm:h-10 sm:w-10 lg:h-11 lg:w-11"
+              aria-label="Request a WhatsApp call"
+              title="Request a WhatsApp call"
+            >
+              <WhatsAppIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+            </AnimatedButton>
 
-            <AnimatedButton to="/book" showArrow>
-              Book Now
+            {/* The arrow is a child rather than showArrow= so it can be dropped
+                on narrow screens without losing it on desktop. */}
+            <AnimatedButton
+              to="/contact"
+              className="px-2.5 py-2.5 text-[11px] sm:px-4 sm:text-sm lg:px-5 lg:py-3"
+            >
+              Enquire
+              <ArrowRight className="hidden h-4 w-4 transition-transform duration-300 group-hover:translate-x-1 lg:block" />
             </AnimatedButton>
           </div>
 
+          {/* The drawer trigger is the only way to reach navigation on a phone,
+              so it gets a 44px target instead of the 32px the old p-1.5 gave.
+              Below 360px the bar genuinely runs out of room — every item here
+              is shrink-0 — so it steps down to 40px, which still clears the
+              24px WCAG minimum and keeps the button on screen. */}
           <button
-            className={`rounded-full p-2 transition-colors lg:hidden ${
+            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors min-[360px]:h-11 min-[360px]:w-11 lg:hidden ${
               scrolled ? 'text-navy-900' : 'text-white'
             }`}
             onClick={() => setOpen(true)}
             aria-label="Open menu"
           >
-            <Menu className="h-6 w-6" />
+            <Menu className="h-5 w-5 sm:h-6 sm:w-6" />
           </button>
         </nav>
       </motion.header>
@@ -177,8 +214,10 @@ export default function Navbar() {
                 </button>
               </div>
 
+              {/* min-h-0 + overflow lets the list scroll once the submenu chips
+                  are expanded, keeping the contact footer pinned in place. */}
               <motion.ul
-                className="mt-10 flex flex-col gap-2"
+                className="mt-8 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-1"
                 initial="hidden"
                 animate="show"
                 variants={{ show: { transition: { staggerChildren: 0.07, delayChildren: 0.1 } } }}
@@ -203,11 +242,31 @@ export default function Navbar() {
                     >
                       {link.label}
                     </NavLink>
+
+                    {/* Same submenu as the desktop dropdown, as chips. The "All …"
+                        row is dropped since the parent link above already is it. */}
+                    {submenus[link.to] && (
+                      <div className="mb-1 mt-1 flex flex-wrap gap-2 px-4">
+                        {submenus[link.to]
+                          .filter((item) => !item.muted)
+                          .map((item, i) => (
+                            <NavLink
+                              key={`${item.to}-${i}`}
+                              to={item.to}
+                              className="rounded-full bg-white/5 px-3 py-1.5 text-xs text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+                            >
+                              {item.label}
+                            </NavLink>
+                          ))}
+                      </div>
+                    )}
                   </motion.li>
                 ))}
               </motion.ul>
 
-              <div className="mt-auto flex flex-col gap-4">
+              {/* Department lines only. WhatsApp and Enquire are permanently on
+                  the bar above, so repeating them here would be dead weight. */}
+              <div className="mt-auto flex flex-col gap-4 border-t border-white/10 pt-5">
                 <div className="flex flex-col gap-3">
                   {contacts.map((c) => (
                     <a
@@ -227,9 +286,6 @@ export default function Navbar() {
                     </a>
                   ))}
                 </div>
-                <AnimatedButton to="/book" showArrow className="w-full">
-                  Book Now
-                </AnimatedButton>
               </div>
             </motion.aside>
           </>

@@ -52,7 +52,10 @@ Base URL: `/api`
 ### Public (no auth)
 - `GET /packages`, `GET /packages/:slug`
 - `GET /destinations`, `GET /visas`, `GET /testimonials`, `GET /faqs`, `GET /services`, `GET /settings`
-- `POST /bookings` — booking request (Book Now wizard)
+- `GET /reviews/google` — live Google rating for the hero badge → `{ rating, reviewCount, url, source, fetchedAt, cached }`.
+  Hits the Places API (New) when `GOOGLE_PLACES_API_KEY` + `GOOGLE_PLACE_ID` are set (cached 6h in memory,
+  `source: "google"`); otherwise falls back to the rating in Admin → Settings (`source: "settings"`).
+- `POST /bookings` — booking request (unused since the Book Now wizard was removed; kept for historical records)
 - `POST /contact` — contact message
 - `POST /subscribe` — newsletter sign-up
 

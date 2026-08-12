@@ -3,7 +3,7 @@ import { api } from '../lib/api'
 
 // Static data doubles as the instant first-paint value AND an offline fallback:
 // if the API is unreachable, the site still renders the seeded content.
-import { packages as staticPackages } from '../data/packages'
+import { packages as staticPackages, isUmrahPackage } from '../data/packages'
 import { destinations as staticDestinations } from '../data/destinations'
 import { visas as staticVisas } from '../data/visas'
 import { testimonials as staticTestimonials } from '../data/testimonials'
@@ -68,12 +68,15 @@ export function ContentProvider({ children }) {
   }, [])
 
   const value = useMemo(() => {
-    const featuredPackages = packages.filter((p) => p.featured)
-    const regions = ['All', ...Array.from(new Set(packages.map((p) => p.region)))]
+    // Split by category: /tours shows everything except Umrah, /umrah the rest.
+    const umrahPackages = packages.filter(isUmrahPackage)
+    const tourPackages = packages.filter((p) => !isUmrahPackage(p))
+    const featuredPackages = tourPackages.filter((p) => p.featured)
+    const regions = ['All', ...Array.from(new Set(tourPackages.map((p) => p.region)))]
     const getPackageBySlug = (slug) => packages.find((p) => p.slug === slug)
     return {
       loading,
-      packages, featuredPackages, regions, getPackageBySlug,
+      packages, tourPackages, umrahPackages, featuredPackages, regions, getPackageBySlug,
       destinations, visas, testimonials, faqs, services, whyChooseUs,
       company, stats,
     }

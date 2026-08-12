@@ -19,6 +19,8 @@ export default function AnimatedButton({
       ? 'btn-gold'
       : variant === 'navy'
       ? 'btn-navy'
+      : variant === 'whatsapp'
+      ? 'btn-whatsapp'
       : 'btn-outline'
 
   const content = (

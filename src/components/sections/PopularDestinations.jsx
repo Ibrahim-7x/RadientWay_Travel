@@ -1,15 +1,20 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowUpRight, Phone } from 'lucide-react'
+import { ArrowUpRight, Phone, MessageCircle } from 'lucide-react'
 import SectionHeading from '../ui/SectionHeading'
+import WhatsAppIcon from '../ui/WhatsAppIcon'
 import Card3D from '../ui/Card3D'
 import SmartImage from '../ui/SmartImage'
 import { useContent } from '../../context/ContentContext'
-import { company } from '../../data/company'
+import { telHref, waCallLink } from '../../data/company'
 import { stagger, viewportOnce } from '../../lib/motion'
 
 export default function PopularDestinations() {
-  const { destinations } = useContent()
+  const { destinations, company } = useContent()
+
+  // A package enquiry belongs to the Holidays & Tours line; both it and the
+  // WhatsApp number come from Admin → Settings.
+  const callHref = telHref(company.holidaysPhone || company.phone)
   return (
     <section className="relative overflow-hidden bg-sand py-24 sm:py-28">
       <div className="container-x">
@@ -70,15 +75,42 @@ export default function PopularDestinations() {
                     </div>
                   </Link>
 
-                  <a
-                    href={company.phoneHref}
-                    onClick={(e) => e.stopPropagation()}
-                    aria-label={`Call us about ${d.name}`}
-                    className="absolute right-4 top-4 z-10 inline-flex items-center gap-1.5 rounded-full bg-gold-gradient px-4 py-2 text-xs font-semibold text-navy-950 shadow-navy transition-transform duration-300 hover:scale-105"
+                  {/* Contact shortcuts sit above the card link so a tap here
+                      doesn't navigate to the package page. */}
+                  <div
+                    className="absolute right-4 top-4 z-10 flex items-center gap-2"
                     style={{ transform: 'translateZ(60px)' }}
                   >
-                    <Phone className="h-4 w-4" /> Call
-                  </a>
+                    <a
+                      href={waCallLink(company, `the ${d.name} package`)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      aria-label={`Request a WhatsApp call about ${d.name}`}
+                      title="Request a WhatsApp call"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#25D366] text-white shadow-navy transition-all duration-300 hover:scale-105 hover:bg-[#1EBE5A]"
+                    >
+                      <WhatsAppIcon className="h-[18px] w-[18px]" />
+                    </a>
+                    <a
+                      href={callHref}
+                      onClick={(e) => e.stopPropagation()}
+                      aria-label={`Call us about ${d.name}`}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-gold-gradient px-4 py-2.5 text-xs font-semibold text-navy-950 shadow-navy transition-transform duration-300 hover:scale-105"
+                    >
+                      <Phone className="h-4 w-4" /> Call
+                    </a>
+                    {/* Deep-links the contact form with the destination already
+                        filled into the message. */}
+                    <Link
+                      to={`/contact?enquiry=${encodeURIComponent(d.name)}`}
+                      onClick={(e) => e.stopPropagation()}
+                      aria-label={`Enquire about ${d.name}`}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-white/95 px-4 py-2.5 text-xs font-semibold text-navy-950 shadow-navy backdrop-blur transition-all duration-300 hover:scale-105 hover:bg-white"
+                    >
+                      <MessageCircle className="h-4 w-4 text-gold-600" /> Enquire
+                    </Link>
+                  </div>
                 </div>
               </Card3D>
             </motion.div>

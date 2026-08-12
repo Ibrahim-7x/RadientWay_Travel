@@ -1,19 +1,48 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowRight, Clock, FileCheck, Info, MessageCircle } from 'lucide-react'
+import { ArrowRight, Clock, FileCheck, Info, Phone } from 'lucide-react'
 import PageHero from '../components/ui/PageHero'
 import SectionHeading from '../components/ui/SectionHeading'
 import AnimatedButton from '../components/ui/AnimatedButton'
+import WhatsAppIcon from '../components/ui/WhatsAppIcon'
 import VisaDetailModal from '../components/ui/VisaDetailModal'
 import { visaSteps } from '../data/visas'
-import { waLink } from '../data/company'
+import { telHref, waLinkFor } from '../data/company'
 import { img } from '../data/packages'
 import { useContent } from '../context/ContentContext'
 import { fadeUp, stagger, viewportOnce } from '../lib/motion'
 
 export default function VisaServicesPage() {
-  const { visas } = useContent()
+  const { visas, company } = useContent()
   const [selected, setSelected] = useState(null)
+  const [params, setParams] = useSearchParams()
+  const countryParam = params.get('country')
+
+  // Visa enquiries go to the Visa Services line — same number the navbar lists,
+  // editable in Admin → Settings.
+  const callHref = telHref(company.visaPhone || company.phone)
+
+  // The navbar's Visa Services dropdown deep-links a country (/visa?country=Turkey);
+  // open that card's detail modal. Runs again when visas arrive from the API.
+  useEffect(() => {
+    if (!countryParam) return
+    const match = visas.find(
+      (v) => v.country.toLowerCase() === countryParam.toLowerCase(),
+    )
+    if (match) setSelected(match)
+  }, [countryParam, visas])
+
+  // Clearing the param on close means the same country can be picked again, and
+  // stops the effect above from re-opening the modal.
+  const closeDetail = () => {
+    setSelected(null)
+    if (countryParam) {
+      const next = new URLSearchParams(params)
+      next.delete('country')
+      setParams(next, { replace: true })
+    }
+  }
 
   return (
     <>
@@ -40,11 +69,15 @@ export default function VisaServicesPage() {
             className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3"
           >
             {visas.map((v) => (
+              // The whole card opens the detail modal; the contact buttons inside
+              // stop propagation so they don't trigger it too. The "View details"
+              // row below stays a real <button> so keyboard users get a control.
               <motion.div
                 key={v.country}
                 variants={fadeUp}
                 whileHover={{ y: -6 }}
-                className="group rounded-3xl bg-white p-7 shadow-card ring-1 ring-navy-950/5 transition-shadow hover:shadow-card-hover"
+                onClick={() => setSelected(v)}
+                className="group cursor-pointer rounded-3xl bg-white p-6 shadow-card ring-1 ring-navy-950/5 transition-shadow hover:shadow-card-hover sm:p-7"
               >
                 <div className="flex items-center gap-4">
                   <span className="text-4xl transition-transform duration-300 group-hover:scale-110">{v.flag}</span>
@@ -59,27 +92,48 @@ export default function VisaServicesPage() {
                 <div className="mt-2 flex items-center gap-2 text-sm text-navy-600">
                   <FileCheck className="h-4 w-4 text-gold-600" /> {v.note}
                 </div>
-                <div className="mt-6 flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setSelected(v)}
-                    className="group/btn inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-navy-950/15 bg-white px-5 py-3 text-sm font-semibold text-navy-950 transition-all duration-300 hover:border-gold-400 hover:bg-gold-50 hover:-translate-y-0.5"
+
+                <button
+                  type="button"
+                  onClick={() => setSelected(v)}
+                  className="mt-5 inline-flex items-center gap-1.5 rounded-md text-sm font-semibold text-navy-950 transition-colors hover:text-gold-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold-500"
+                >
+                  <Info className="h-4 w-4 text-gold-600" />
+                  View details
+                  <ArrowRight className="h-3.5 w-3.5 text-gold-600 transition-transform duration-300 group-hover:translate-x-1" />
+                </button>
+
+                <div className="mt-5 flex items-center gap-2.5">
+                  <AnimatedButton
+                    href={callHref}
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex-1 px-4"
+                    aria-label={`Call us about a ${v.country} visa`}
                   >
-                    <Info className="h-4 w-4 text-gold-600 transition-transform duration-300 group-hover/btn:scale-110" />
-                    Details
-                  </button>
-                  <AnimatedButton to="/contact" variant="navy" className="flex-1" showArrow>
+                    <Phone className="h-4 w-4" />
+                    Call
+                  </AnimatedButton>
+                  <AnimatedButton
+                    to="/contact"
+                    variant="navy"
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex-1 px-4"
+                  >
                     Enquire
                   </AnimatedButton>
                   <a
-                    href={waLink(`Hi RadiantWay, I'd like help with a ${v.country} visa (${v.type}).`)}
+                    href={waLinkFor(
+                      company,
+                      `Hi ${company.shortName || company.name}, I'd like help with a ${v.country} visa (${v.type}).`,
+                    )}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
                     aria-label={`Chat about ${v.country} visa on WhatsApp`}
                     title="Chat on WhatsApp"
                     className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg shadow-[#25D366]/30 transition-transform duration-300 hover:scale-110"
                   >
-                    <MessageCircle className="h-5 w-5" />
+                    <WhatsAppIcon className="h-5 w-5" />
                   </a>
                 </div>
               </motion.div>
@@ -122,7 +176,7 @@ export default function VisaServicesPage() {
         </div>
       </section>
 
-      <VisaDetailModal visa={selected} onClose={() => setSelected(null)} />
+      <VisaDetailModal visa={selected} onClose={closeDetail} />
     </>
   )
 }

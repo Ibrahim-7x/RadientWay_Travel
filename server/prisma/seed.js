@@ -51,6 +51,7 @@ async function main() {
         data: {
           slug: p.slug,
           name: p.name,
+          category: p.category || 'tour',
           country: p.country,
           region: p.region,
           city: p.city,

@@ -47,7 +47,7 @@ export default function CtaBanner() {
           </motion.p>
 
           <motion.div variants={fadeUp} className="mt-8 flex flex-wrap items-center justify-center gap-4">
-            <AnimatedButton to="/book" showArrow>
+            <AnimatedButton to="/contact" showArrow>
               Start planning
             </AnimatedButton>
             <AnimatedButton href={company.phoneHref} variant="outline">

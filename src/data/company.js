@@ -26,13 +26,29 @@ export const company = {
     { name: 'Facebook', href: 'https://www.facebook.com/share/19qorzUXsM/', icon: 'Facebook' },
     { name: 'WhatsApp', href: 'https://wa.me/971547861293', icon: 'MessageCircle' },
   ],
-  rating: 5.0,
-  reviewCount: 640,
+  // Fallback for the hero's Google badge until the server has a Places API key
+  // (see server/.env.example) — kept at the real listing's figures so the badge
+  // never attributes made-up numbers to Google. Editable in Admin → Settings.
+  rating: 4.7,
+  reviewCount: 39,
 }
 
 // Build a WhatsApp chat link, optionally with a prefilled message.
 export const waLink = (text) =>
   text ? `${company.whatsapp}?text=${encodeURIComponent(text)}` : company.whatsapp
+
+// Same, but against a passed-in company object — use this with the one from
+// useContent() so the link follows the WhatsApp number set in Admin → Settings.
+export const waLinkFor = (co, text) =>
+  text ? `${co.whatsapp}?text=${encodeURIComponent(text)}` : co.whatsapp
+
+// The "please call me back" WhatsApp request behind every WhatsApp Call button.
+// `about` narrows the message to a package; omit it for a general enquiry.
+export const waCallLink = (co, about) =>
+  waLinkFor(
+    co,
+    `Hi ${co.shortName || co.name}, please give me a call about ${about || 'my travel plans'}.`,
+  )
 
 // Turn a display phone number into a tel: href (keeps digits and leading +).
 export const telHref = (phone) => `tel:${String(phone || '').replace(/[^\d+]/g, '')}`
@@ -41,5 +57,10 @@ export const stats = [
   { value: 8, suffix: '+', label: 'Years of expertise' },
   { value: 50, suffix: 'k+', label: 'Happy travellers' },
   { value: 40, suffix: '+', label: 'Destinations worldwide' },
-  { value: 5.0, suffix: '★', label: `Rated by ${company.reviewCount}+ reviews`, decimals: 1 },
+  {
+    value: company.rating,
+    suffix: '★',
+    label: `Rated by ${company.reviewCount}+ reviews`,
+    decimals: 1,
+  },
 ]

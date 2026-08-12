@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Star, MapPin, ChevronDown, PlayCircle } from 'lucide-react'
+import { MapPin, ChevronDown, Phone } from 'lucide-react'
 import AnimatedButton from '../ui/AnimatedButton'
-import { company } from '../../data/company'
-import { img } from '../../data/packages'
+import WhatsAppIcon from '../ui/WhatsAppIcon'
+import GoogleRating from '../ui/GoogleRating'
+import { telHref, waCallLink } from '../../data/company'
+import { useContent } from '../../context/ContentContext'
+import { img, imgSrcSet } from '../../data/packages'
 import { wordContainer, wordChild } from '../../lib/motion'
 
 const slides = [
@@ -17,7 +20,14 @@ const slides = [
 const headline = ['Effortless', 'Journeys.', 'Lasting', 'Memories.']
 
 export default function Hero() {
+  // Company comes from the API (Admin → Settings) with the static data as fallback,
+  // so the rating, review count and WhatsApp number stay editable.
+  const { company } = useContent()
   const [index, setIndex] = useState(0)
+
+  // wa.me can't dial directly, so the message primes the chat and the caller
+  // taps the call icon there.
+  const waCallHref = waCallLink(company)
 
   useEffect(() => {
     const id = setInterval(() => setIndex((i) => (i + 1) % slides.length), 6000)
@@ -36,9 +46,18 @@ export default function Hero() {
           transition={{ duration: 1.4, ease: 'easeInOut' }}
           className="absolute inset-0"
         >
+          {/* The first slide is the LCP element: eager + high priority so it
+              races ahead of the JS bundle (index.html preloads it too). Decode
+              stays async even for it — a sync decode of the 1920w variant would
+              block the main thread for tens of ms to win a single frame. */}
           <img
             src={slides[index].image}
+            srcSet={imgSrcSet(slides[index].image)}
+            sizes="100vw"
             alt={slides[index].place}
+            loading="eager"
+            fetchpriority={index === 0 ? 'high' : 'low'}
+            decoding="async"
             className="h-full w-full origin-center animate-kenburns object-cover"
           />
         </motion.div>
@@ -59,14 +78,9 @@ export default function Hero() {
             <span className="eyebrow border-gold-400/40 bg-white/5 text-gold-300">
               ✦ UAE-based · Global reach
             </span>
-            <span className="flex items-center gap-2 text-sm text-white/80">
-              <span className="flex">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Star key={i} className="h-4 w-4 fill-gold-400 text-gold-400" />
-                ))}
-              </span>
-              {company.rating.toFixed(1)} · {company.reviewCount}+ reviews
-            </span>
+            {/* Live Google rating — replaces the old static star line that sat
+                here, which showed the same numbers a step behind. */}
+            <GoogleRating />
           </motion.div>
 
           {/* Headline with word reveal */}
@@ -76,11 +90,20 @@ export default function Hero() {
             animate="show"
             className="font-display text-5xl font-semibold leading-[1.05] text-white sm:text-6xl lg:text-7xl"
           >
+            {/* The tight leading-[1.05] cuts the box off above the glyph descent,
+                which both clips the reveal mask and — because text-gradient-gold
+                paints via bg-clip-text — leaves the "g" tail in Lasting unfilled.
+                Bottom padding in em on the word itself extends the gradient box at
+                every breakpoint; the negative margin on the mask takes that extra
+                height back out of the line spacing. */}
             {headline.map((word, i) => (
-              <span key={i} className="mr-3 inline-block overflow-hidden pb-2 align-bottom">
+              <span
+                key={i}
+                className="mr-3 -mb-[0.18em] inline-block overflow-hidden align-bottom"
+              >
                 <motion.span
                   variants={wordChild}
-                  className={`inline-block ${i >= 2 ? 'text-gradient-gold' : ''}`}
+                  className={`inline-block pb-[0.18em] ${i >= 2 ? 'text-gradient-gold' : ''}`}
                 >
                   {word}
                 </motion.span>
@@ -107,9 +130,28 @@ export default function Hero() {
             <AnimatedButton to="/tours" showArrow>
               Explore Packages
             </AnimatedButton>
-            <AnimatedButton href={company.whatsapp} variant="outline">
-              <PlayCircle className="h-5 w-5" />
-              Talk to an expert
+            {/* Two logo-only circles, both sized to the height of Explore
+                Packages. Call is the glass/outline variant so it sits below the
+                gold and green in the hierarchy instead of competing with them. */}
+            <AnimatedButton
+              href={telHref(company.phone)}
+              variant="outline"
+              className="h-[50px] w-[50px] shrink-0 p-0"
+              aria-label={`Call us on ${company.phone}`}
+              title={`Call us on ${company.phone}`}
+            >
+              <Phone className="h-[22px] w-[22px] text-gold-400" />
+            </AnimatedButton>
+            <AnimatedButton
+              href={waCallHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              variant="whatsapp"
+              className="h-[50px] w-[50px] shrink-0 p-0"
+              aria-label="Request a WhatsApp call"
+              title="Request a WhatsApp call"
+            >
+              <WhatsAppIcon className="h-6 w-6" />
             </AnimatedButton>
           </motion.div>
         </div>

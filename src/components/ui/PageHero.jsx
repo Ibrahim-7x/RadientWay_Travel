@@ -2,12 +2,24 @@ import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { ChevronRight } from 'lucide-react'
 import { wordContainer, wordChild } from '../../lib/motion'
+import { imgSrcSet } from '../../data/packages'
 
 // Inner-page banner with a background image, gradient overlay and breadcrumb.
 export default function PageHero({ title, subtitle, image, crumb }) {
   return (
-    <section className="relative flex min-h-[52vh] items-end overflow-hidden bg-navy-950 pb-14 pt-32">
-      <img src={image} alt="" className="absolute inset-0 h-full w-full animate-kenburns object-cover" />
+    // svh rather than vh: on mobile, vh is measured against the viewport with
+    // browser chrome hidden, so the banner resizes as the URL bar collapses.
+    <section className="relative flex min-h-[52svh] items-end overflow-hidden bg-navy-950 pb-14 pt-32">
+      <img
+        src={image}
+        srcSet={imgSrcSet(image)}
+        sizes="100vw"
+        alt=""
+        loading="eager"
+        fetchpriority="high"
+        decoding="async"
+        className="absolute inset-0 h-full w-full animate-kenburns object-cover"
+      />
       <div className="absolute inset-0 bg-gradient-to-t from-navy-950 via-navy-950/70 to-navy-950/40" />
 
       <div className="container-x relative z-10">

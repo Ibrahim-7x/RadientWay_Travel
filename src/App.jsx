@@ -1,7 +1,6 @@
 import { useEffect, lazy, Suspense } from 'react'
-import { Routes, Route, useLocation } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import Lenis from 'lenis'
 
 import Navbar from './components/layout/Navbar'
 import Footer from './components/layout/Footer'
@@ -10,24 +9,21 @@ import WhatsAppFab from './components/layout/WhatsAppFab'
 import ScrollToTop from './components/layout/ScrollToTop'
 import { ContentProvider } from './context/ContentContext'
 
+// Home is the landing route for nearly every visitor, so it stays in the main
+// bundle — lazying it would only add a request waterfall before first paint.
+// Every other page is split out and fetched on navigation.
 import Home from './pages/Home'
-import TourPackages from './pages/TourPackages'
-import TourDetail from './pages/TourDetail'
-import VisaServicesPage from './pages/VisaServicesPage'
-import About from './pages/About'
-import Contact from './pages/Contact'
-import BookNow from './pages/BookNow'
-import NotFound from './pages/NotFound'
+
+const TourPackages = lazy(() => import('./pages/TourPackages'))
+const TourDetail = lazy(() => import('./pages/TourDetail'))
+const UmrahPackages = lazy(() => import('./pages/UmrahPackages'))
+const VisaServicesPage = lazy(() => import('./pages/VisaServicesPage'))
+const About = lazy(() => import('./pages/About'))
+const Contact = lazy(() => import('./pages/Contact'))
+const NotFound = lazy(() => import('./pages/NotFound'))
 
 // Admin is code-split so its bundle never loads on the public site.
 const AdminRoutes = lazy(() => import('./pages/admin/AdminRoutes'))
-
-function usePrefersReducedMotion() {
-  return (
-    typeof window !== 'undefined' &&
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  )
-}
 
 const pageVariants = {
   initial: { opacity: 0, y: 16 },
@@ -35,10 +31,14 @@ const pageVariants = {
   exit: { opacity: 0, y: -12, transition: { duration: 0.3 } },
 }
 
+// The Suspense boundary lives here rather than around <Routes> because
+// AnimatePresence needs the keyed <Routes> as its direct child — wrapping that
+// in Suspense would break page exit animations. min-h-screen holds the footer
+// down while a route chunk loads so the page doesn't jump.
 function Page({ children }) {
   return (
     <motion.main variants={pageVariants} initial="initial" animate="enter" exit="exit">
-      {children}
+      <Suspense fallback={<div className="min-h-screen" />}>{children}</Suspense>
     </motion.main>
   )
 }
@@ -47,22 +47,39 @@ function Page({ children }) {
 function PublicSite() {
   const location = useLocation()
 
+  // Smooth scroll is a desktop affordance. On touch it replaces the platform's
+  // own momentum scrolling with a worse imitation, and costs a permanent rAF
+  // loop plus ~20kB on exactly the devices least able to spare either — so it
+  // is gated to fine pointers and imported dynamically, keeping it out of the
+  // bundle phones download at all.
   useEffect(() => {
-    if (usePrefersReducedMotion()) return
-    const lenis = new Lenis({
-      duration: 1.1,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      smoothWheel: true,
-    })
+    const wants =
+      !window.matchMedia('(prefers-reduced-motion: reduce)').matches &&
+      window.matchMedia('(hover: hover) and (pointer: fine)').matches
+    if (!wants) return
+
+    let lenis
     let raf
-    const loop = (time) => {
-      lenis.raf(time)
+    let cancelled = false
+
+    import('lenis').then(({ default: Lenis }) => {
+      if (cancelled) return
+      lenis = new Lenis({
+        duration: 1.1,
+        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+        smoothWheel: true,
+      })
+      const loop = (time) => {
+        lenis.raf(time)
+        raf = requestAnimationFrame(loop)
+      }
       raf = requestAnimationFrame(loop)
-    }
-    raf = requestAnimationFrame(loop)
+    })
+
     return () => {
-      cancelAnimationFrame(raf)
-      lenis.destroy()
+      cancelled = true
+      if (raf) cancelAnimationFrame(raf)
+      lenis?.destroy()
     }
   }, [])
 
@@ -76,10 +93,14 @@ function PublicSite() {
           <Route path="/" element={<Page><Home /></Page>} />
           <Route path="/tours" element={<Page><TourPackages /></Page>} />
           <Route path="/tours/:slug" element={<Page><TourDetail /></Page>} />
+          <Route path="/umrah" element={<Page><UmrahPackages /></Page>} />
+          {/* Umrah detail pages share TourDetail — same shape, different tab. */}
+          <Route path="/umrah/:slug" element={<Page><TourDetail /></Page>} />
           <Route path="/visa" element={<Page><VisaServicesPage /></Page>} />
           <Route path="/about" element={<Page><About /></Page>} />
           <Route path="/contact" element={<Page><Contact /></Page>} />
-          <Route path="/book" element={<Page><BookNow /></Page>} />
+          {/* /book retired — all enquiries go through /contact */}
+          <Route path="/book" element={<Navigate to="/contact" replace />} />
           <Route path="*" element={<Page><NotFound /></Page>} />
         </Routes>
       </AnimatePresence>

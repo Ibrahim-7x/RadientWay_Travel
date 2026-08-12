@@ -1,11 +1,25 @@
 import { useState } from 'react'
+import { imgSrcSet } from '../../data/packages'
 
 /**
  * Image with a graceful gradient fallback so a broken/hotlinked stock photo
  * never shows a broken-image icon. While loading (or on error) a navy→gold
  * gradient with the alt label is shown instead.
+ *
+ * `sizes` describes the rendered width so the browser can pick the smallest
+ * usable file from the srcset — the default matches the 1/2/3-column card
+ * grids used across the site. Pass `priority` for anything above the fold:
+ * lazy-loading the LCP image is what delays it.
  */
-export default function SmartImage({ src, alt = '', className = '', imgClassName = '', label }) {
+export default function SmartImage({
+  src,
+  alt = '',
+  className = '',
+  imgClassName = '',
+  label,
+  sizes = '(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw',
+  priority = false,
+}) {
   const [status, setStatus] = useState('loading') // loading | loaded | error
 
   return (
@@ -27,8 +41,12 @@ export default function SmartImage({ src, alt = '', className = '', imgClassName
       {status !== 'error' && (
         <img
           src={src}
+          srcSet={imgSrcSet(src)}
+          sizes={sizes}
           alt={alt}
-          loading="lazy"
+          loading={priority ? 'eager' : 'lazy'}
+          fetchpriority={priority ? 'high' : undefined}
+          decoding="async"
           onLoad={() => setStatus('loaded')}
           onError={() => setStatus('error')}
           className={`h-full w-full object-cover transition-opacity duration-700 ${

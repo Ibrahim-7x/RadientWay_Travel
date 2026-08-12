@@ -1,10 +1,20 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { MapPin, Moon, Star, ArrowUpRight, MessageCircle } from 'lucide-react'
+import { MapPin, Moon, Star, ArrowUpRight, MessageCircle, Phone } from 'lucide-react'
 import SmartImage from './SmartImage'
-import { waLink } from '../../data/company'
+import WhatsAppIcon from './WhatsAppIcon'
+import { telHref, waLinkFor } from '../../data/company'
+import { packagePath } from '../../data/packages'
+import { useContent } from '../../context/ContentContext'
 
 export default function TourCard({ pkg }) {
+  // Tours live under /tours/<slug>, Umrah packages under /umrah/<slug>.
+  const detailPath = packagePath(pkg)
+  // Package enquiries belong to the Holidays & Tours line; both numbers come
+  // from Admin → Settings.
+  const { company } = useContent()
+  const callHref = telHref(company.holidaysPhone || company.phone)
+
   return (
     <motion.div
       variants={{
@@ -13,20 +23,34 @@ export default function TourCard({ pkg }) {
       }}
       className="group relative h-full"
     >
-      {/* Sibling of the card Link (never nested inside it — anchors can't nest). */}
-      <a
-        href={waLink(`Hi RadiantWay, I'm interested in the "${pkg.name}" package. Could you share more details?`)}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label={`Chat about ${pkg.name} on WhatsApp`}
-        title="Chat on WhatsApp"
-        className="absolute right-4 top-4 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg shadow-[#25D366]/40 transition-transform duration-300 hover:scale-110"
-      >
-        <MessageCircle className="h-5 w-5" />
-      </a>
+      {/* Contact shortcuts — siblings of the card Link (never nested inside it,
+          anchors can't nest). */}
+      <div className="absolute right-4 top-4 z-20 flex items-center gap-2">
+        <a
+          href={callHref}
+          aria-label={`Call us about ${pkg.name}`}
+          title={`Call ${company.holidaysPhone || company.phone}`}
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-gold-gradient text-navy-950 shadow-lg shadow-gold-500/40 transition-transform duration-300 hover:scale-110"
+        >
+          <Phone className="h-5 w-5" />
+        </a>
+        <a
+          href={waLinkFor(
+            company,
+            `Hi ${company.shortName || company.name}, I'm interested in the "${pkg.name}" package. Could you share more details?`,
+          )}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`Chat about ${pkg.name} on WhatsApp`}
+          title="Chat on WhatsApp"
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg shadow-[#25D366]/40 transition-transform duration-300 hover:scale-110"
+        >
+          <WhatsAppIcon className="h-5 w-5" />
+        </a>
+      </div>
 
       <div className="card-surface flex h-full flex-col overflow-hidden transition-all duration-500 group-hover:-translate-y-2 group-hover:shadow-card-hover">
-        <Link to={`/tours/${pkg.slug}`} className="relative block h-56 overflow-hidden">
+        <Link to={detailPath} className="relative block h-56 overflow-hidden">
           <SmartImage
             src={pkg.image}
             alt={pkg.name}
@@ -37,7 +61,8 @@ export default function TourCard({ pkg }) {
           <div className="absolute inset-0 bg-gradient-to-t from-navy-950/70 via-transparent to-transparent" />
 
           {/* Tags */}
-          <div className="absolute left-4 top-4 flex flex-wrap gap-2">
+          {/* right-28 keeps the tags clear of the Call/WhatsApp buttons. */}
+          <div className="absolute left-4 right-28 top-4 flex flex-wrap gap-2">
             {pkg.tags?.slice(0, 2).map((t) => (
               <span
                 key={t}
@@ -92,7 +117,7 @@ export default function TourCard({ pkg }) {
 
           <div className="mt-auto flex items-center gap-3 pt-5">
             <Link
-              to={`/tours/${pkg.slug}`}
+              to={detailPath}
               className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-navy-950 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-navy-800"
             >
               View Details

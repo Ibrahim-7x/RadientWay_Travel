@@ -9,7 +9,7 @@ import Logo from './Logo'
 const serviceLinks = [
   { label: 'Tour Packages', to: '/tours' },
   { label: 'Visa Services', to: '/visa' },
-  { label: 'Umrah Packages', to: '/tours/umrah-package' },
+  { label: 'Umrah Packages', to: '/umrah' },
   { label: 'Dubai Activities', to: '/tours/dubai-city-experience' },
 ]
 

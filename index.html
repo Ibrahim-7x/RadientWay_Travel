@@ -11,9 +11,41 @@
     <meta name="theme-color" content="#0b1a2f" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Images are the heaviest thing on the page and come from a third origin;
+         opening the connection during head parse saves a DNS+TLS round trip. -->
+    <link rel="preconnect" href="https://images.unsplash.com" crossorigin />
+
+    <!-- Only 400/500/600/700 are ever used (font-medium/semibold/bold + the
+         default), so the other five weights were pure download. Loaded via
+         media="print" so the stylesheet never blocks first paint; display=swap
+         renders text in the fallback face until the webfont lands. -->
     <link
-      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800&display=swap"
+      rel="preload"
+      as="style"
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap"
+    />
+    <link
       rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap"
+    />
+
+    <!-- LCP preload: the hero's first slide. Kept in sync with slides[0] in
+         src/components/sections/Hero.jsx — it has to live here to start
+         downloading during head parse rather than after React mounts.
+         imagesrcset means a phone still only pulls the 480w file. -->
+    <link
+      rel="preload"
+      as="image"
+      fetchpriority="high"
+      imagesizes="100vw"
+      href="https://images.unsplash.com/photo-1514282401047-d79a71a590e8?auto=format&fit=crop&w=1920&q=80"
+      imagesrcset="
+        https://images.unsplash.com/photo-1514282401047-d79a71a590e8?auto=format&fit=crop&w=480&q=80 480w,
+        https://images.unsplash.com/photo-1514282401047-d79a71a590e8?auto=format&fit=crop&w=768&q=80 768w,
+        https://images.unsplash.com/photo-1514282401047-d79a71a590e8?auto=format&fit=crop&w=1200&q=80 1200w,
+        https://images.unsplash.com/photo-1514282401047-d79a71a590e8?auto=format&fit=crop&w=1920&q=80 1920w"
     />
     <title>RadiantWay Travel — Effortless Journeys. Lasting Memories.</title>
   </head>

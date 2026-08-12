@@ -26,11 +26,12 @@ model AdminUser {
   updatedAt    DateTime @updatedAt
 }
 
-// ── Content: Tour packages ───────────────────────────────────────────────────
+// ── Content: Tour & Umrah packages ───────────────────────────────────────────
 model Package {
   id         Int      @id @default(autoincrement())
   slug       String   @unique
   name       String
+  category   String   @default("tour") // tour | umrah — picks the listing page
   country    String
   region     String
   city       String

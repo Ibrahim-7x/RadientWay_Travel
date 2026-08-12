@@ -33,7 +33,7 @@ export default function Logo({
       {/* RADIANT WAY */}
       <text
         x="315.5"
-        y="332"
+        y="322"
         textAnchor="middle"
         textLength="614"
         lengthAdjust="spacingAndGlyphs"
@@ -47,21 +47,21 @@ export default function Logo({
 
       {/* TRAVEL with flanking rules */}
       <g style={{ ...shift, fill: travelColor }}>
-        <rect x="88" y="362" width="82" height="5" rx="2.5" />
+        <rect x="88" y="364" width="72" height="5" rx="2.5" />
         <text
           x="315.5"
-          y="390"
+          y="392"
           textAnchor="middle"
-          textLength="262"
+          textLength="292"
           lengthAdjust="spacingAndGlyphs"
           fontFamily="Inter, system-ui, sans-serif"
-          fontWeight="600"
-          fontSize="62"
+          fontWeight="700"
+          fontSize="70"
           style={{ fill: travelColor }}
         >
           TRAVEL
         </text>
-        <rect x="461" y="362" width="82" height="5" rx="2.5" />
+        <rect x="471" y="364" width="72" height="5" rx="2.5" />
       </g>
     </svg>
   )

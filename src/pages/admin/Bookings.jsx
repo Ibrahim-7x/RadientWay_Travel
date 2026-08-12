@@ -114,7 +114,7 @@ export default function Bookings() {
         rows={rows}
         loading={loading}
         emptyTitle="No bookings yet"
-        emptySubtitle="Booking requests from the Book Now page will appear here."
+        emptySubtitle="Older booking requests appear here. New enquiries now arrive under Leads."
         actions={(row) => (
           <button
             onClick={() => setTarget(row)}
