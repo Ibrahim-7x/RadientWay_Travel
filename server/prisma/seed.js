@@ -1,6 +1,7 @@
 import 'dotenv/config'
 import { PrismaClient } from '@prisma/client'
 import { hashPassword } from '../src/lib/auth.js'
+import { requireSecrets } from '../src/lib/env.js'
 
 // Import the existing frontend content so the DB starts as a faithful mirror
 // of the static site. These modules are plain data (no React), so Node can
@@ -23,6 +24,9 @@ async function seedAdmin() {
     console.log(`  · admin user already exists (${email})`)
     return
   }
+  // The compose stack runs this seed on every start, so in production a
+  // fallback password would silently publish the admin account.
+  requireSecrets(['ADMIN_PASSWORD'])
   const passwordHash = await hashPassword(process.env.ADMIN_PASSWORD || 'ChangeMe123!')
   await prisma.adminUser.create({
     data: { email, passwordHash, name: process.env.ADMIN_NAME || 'RadiantWay Admin', role: 'admin' },

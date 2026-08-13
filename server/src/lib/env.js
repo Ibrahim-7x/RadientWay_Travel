@@ -1,0 +1,59 @@
+// Boot-time secret validation.
+//
+// Every secret in this project has a development fallback so `npm run dev`
+// works with no setup. Those fallbacks are committed to a git repo, which makes
+// them public knowledge — a JWT_SECRET anyone can read lets them forge an admin
+// token, and a known ADMIN_PASSWORD is simply a published login. The fallbacks
+// are silent, so nothing would tell you they had reached production.
+//
+// This module makes that failure loud instead: in production the process
+// refuses to start unless the secrets are set to something of our own.
+
+export const isProduction = process.env.NODE_ENV === 'production'
+
+// The placeholder values that ship in this repo — .env.example, the seed
+// script's default, and the old fallback in lib/auth.js. Any of these in
+// production means the secret is not a secret.
+const PUBLISHED_DEFAULTS = new Set([
+  'change-me-to-a-long-random-secret-string',
+  'dev-secret-change-me',
+  'ChangeMe123!',
+])
+
+const MIN_JWT_SECRET_LENGTH = 32
+
+function inspect(name) {
+  const value = process.env[name]
+  if (!value) return `${name} is not set`
+  if (PUBLISHED_DEFAULTS.has(value)) {
+    return `${name} is still the example value committed to this repo`
+  }
+  if (name === 'JWT_SECRET' && value.length < MIN_JWT_SECRET_LENGTH) {
+    return `JWT_SECRET is ${value.length} characters; use at least ${MIN_JWT_SECRET_LENGTH}`
+  }
+  return null
+}
+
+/**
+ * Exits the process if any named secret is missing, still set to a published
+ * default, or too weak. Outside production this only warns, so local work and
+ * CI keep running with the dev fallbacks.
+ */
+export function requireSecrets(names) {
+  const problems = names.map(inspect).filter(Boolean)
+  if (!problems.length) return
+
+  const detail = problems.map((p) => `    - ${p}`).join('\n')
+
+  if (!isProduction) {
+    console.warn(`\n  [env] Using development fallbacks:\n${detail}\n`)
+    return
+  }
+
+  console.error(
+    `\n  Refusing to start: insecure configuration in production.\n\n${detail}\n\n` +
+      `  Generate a secret with:\n` +
+      `    node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"\n`,
+  )
+  process.exit(1)
+}

@@ -5,6 +5,7 @@ import * as leads from '../controllers/leads.controller.js'
 import * as subscribers from '../controllers/subscribers.controller.js'
 import { getCompany } from '../controllers/settings.controller.js'
 import { getGoogleRating } from '../controllers/reviews.controller.js'
+import { formLimiter } from '../middleware/rateLimit.js'
 
 // Read-only content + public form submissions. No auth.
 const router = Router()
@@ -21,8 +22,8 @@ router.get('/settings', getCompany)
 router.get('/reviews/google', getGoogleRating)
 
 // Submissions
-router.post('/bookings', bookings.create)
-router.post('/contact', leads.create)
-router.post('/subscribe', subscribers.subscribe)
+router.post('/bookings', formLimiter, bookings.create)
+router.post('/contact', formLimiter, leads.create)
+router.post('/subscribe', formLimiter, subscribers.subscribe)
 
 export default router

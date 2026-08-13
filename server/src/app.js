@@ -9,6 +9,17 @@ import { UPLOAD_DIR } from './middleware/upload.js'
 export function createApp() {
   const app = express()
 
+  // Don't advertise the framework.
+  app.disable('x-powered-by')
+
+  // nginx proxies /api, so without this every request carries the proxy's IP
+  // and the rate limiters would count the whole internet as one client —
+  // throttling all users the moment anyone hits a limit. The value is a hop
+  // count, not `true`: it trusts only the N proxies nearest this app, so a
+  // client can't spoof its address by sending its own X-Forwarded-For.
+  // Raise it if you add another proxy in front (a CDN, a load balancer).
+  app.set('trust proxy', Number(process.env.TRUST_PROXY_HOPS ?? 1))
+
   const origins = (process.env.CLIENT_ORIGIN || 'http://localhost:5173')
     .split(',')
     .map((s) => s.trim())
