@@ -18,6 +18,11 @@ const PUBLISHED_DEFAULTS = new Set([
   'change-me-to-a-long-random-secret-string',
   'dev-secret-change-me',
   'ChangeMe123!',
+  // Placeholders from .env.example. Listed so importing that file wholesale
+  // into a hosting panel fails loudly on the first boot instead of quietly
+  // running production on a value published in this repo.
+  'REPLACE_WITH_A_GENERATED_SECRET',
+  'REPLACE_WITH_A_REAL_PASSWORD',
 ])
 
 const MIN_JWT_SECRET_LENGTH = 32
