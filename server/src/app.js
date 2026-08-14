@@ -1,4 +1,6 @@
+import path from 'node:path'
 import express from 'express'
+import compression from 'compression'
 import cors from 'cors'
 import morgan from 'morgan'
 import cookieParser from 'cookie-parser'
@@ -6,7 +8,16 @@ import routes from './routes/index.js'
 import { notFoundHandler, errorHandler } from './middleware/error.js'
 import { UPLOAD_DIR } from './middleware/upload.js'
 
-export function createApp() {
+/**
+ * @param {object}  [options]
+ * @param {string}  [options.staticDir] Directory holding the built frontend.
+ *   Passing it puts this process at the network edge, serving the site itself
+ *   instead of sitting behind nginx — see server.js in the repo root. It then
+ *   also takes over the jobs nginx would otherwise do: compression, cache
+ *   policy, security headers and the SPA fallback. Leave it unset for the
+ *   Docker stack, where nginx still handles all of that.
+ */
+export function createApp({ staticDir } = {}) {
   const app = express()
 
   // Don't advertise the framework.
@@ -20,31 +31,79 @@ export function createApp() {
   // Raise it if you add another proxy in front (a CDN, a load balancer).
   app.set('trust proxy', Number(process.env.TRUST_PROXY_HOPS ?? 1))
 
-  const origins = (process.env.CLIENT_ORIGIN || 'http://localhost:5173')
-    .split(',')
-    .map((s) => s.trim())
+  // PUBLIC_URL is this site's own address, so it is always a legitimate origin.
+  // Including it automatically means a same-origin POST (the contact form) can
+  // never be rejected just because CLIENT_ORIGIN forgot to list the site itself.
+  const origins = [
+    ...(process.env.CLIENT_ORIGIN || 'http://localhost:5173').split(','),
+    process.env.PUBLIC_URL || '',
+  ]
+    .map((s) => s.trim().replace(/\/$/, ''))
     .filter(Boolean)
 
-  app.use(
-    cors({
-      origin: (origin, cb) => {
-        // Allow tools with no origin (curl, same-origin) and whitelisted origins.
-        if (!origin || origins.includes(origin)) return cb(null, true)
-        cb(new Error(`Origin not allowed by CORS: ${origin}`))
-      },
-      credentials: true,
-    }),
-  )
+  const corsMw = cors({
+    origin: (origin, cb) => {
+      // Allow tools with no origin (curl, same-origin GETs) and the whitelist.
+      if (!origin || origins.includes(origin.replace(/\/$/, ''))) return cb(null, true)
+      cb(new Error(`Origin not allowed by CORS: ${origin}`))
+    },
+    credentials: true,
+  })
 
   app.use(express.json({ limit: '2mb' }))
   app.use(cookieParser())
   app.use(morgan('dev'))
 
-  // Serve uploaded images.
-  app.use('/uploads', express.static(UPLOAD_DIR))
+  // CORS is scoped to the API surface, never the whole app. Applied globally it
+  // also guarded the static files, and Vite emits <script type="module"
+  // crossorigin> — so the browser sends an Origin header even same-origin, the
+  // whitelist rejected the site's own address, and the bundle 500'd. The page
+  // then rendered as a blank shell with nothing in the console.
+  app.use('/uploads', corsMw, express.static(UPLOAD_DIR))
+  app.use('/api', corsMw, routes)
 
-  // API
-  app.use('/api', routes)
+  if (staticDir) {
+    // Without nginx in front, an uncompressed bundle is ~384kB instead of
+    // ~125kB, so this is not optional.
+    app.use(compression())
+
+    // Same headers the nginx config sets. Skipped when nginx is present so the
+    // client doesn't receive each one twice.
+    app.use((_req, res, next) => {
+      res.setHeader('X-Content-Type-Options', 'nosniff')
+      res.setHeader('X-Frame-Options', 'SAMEORIGIN')
+      res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin')
+      res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()')
+      next()
+    })
+
+    // index:false so "/" falls through to the SPA handler below and gets one
+    // consistent cache policy. Only /assets/ is fingerprinted by Vite, so only
+    // it is safe to freeze for a year.
+    app.use(
+      express.static(staticDir, {
+        index: false,
+        setHeaders: (res, filePath) => {
+          const hashed = filePath.includes(`${path.sep}assets${path.sep}`)
+          res.setHeader(
+            'Cache-Control',
+            hashed ? 'public, max-age=31536000, immutable' : 'public, max-age=3600',
+          )
+        },
+      }),
+    )
+
+    // SPA fallback: any other GET is a client-side route. Written as plain
+    // middleware rather than app.get('*') because the '*' pattern stopped
+    // being valid in Express 5. /api and /uploads fall through to the 404
+    // handler so a mistyped endpoint returns JSON, not the HTML shell.
+    app.use((req, res, next) => {
+      if (req.method !== 'GET' && req.method !== 'HEAD') return next()
+      if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) return next()
+      res.setHeader('Cache-Control', 'no-cache')
+      res.sendFile(path.join(staticDir, 'index.html'))
+    })
+  }
 
   app.use(notFoundHandler)
   app.use(errorHandler)

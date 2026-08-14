@@ -4,7 +4,13 @@ import fs from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-export const UPLOAD_DIR = path.resolve(__dirname, '../../uploads')
+
+// Overridable because the default sits inside the deployment directory, which
+// most hosts replace wholesale on each deploy — pointing UPLOAD_DIR at the same
+// persistent disk as the database is what stops uploaded images vanishing.
+export const UPLOAD_DIR = process.env.UPLOAD_DIR
+  ? path.resolve(process.env.UPLOAD_DIR)
+  : path.resolve(__dirname, '../../uploads')
 
 // Ensure the uploads directory exists.
 fs.mkdirSync(UPLOAD_DIR, { recursive: true })
