@@ -13,7 +13,7 @@
 import 'dotenv/config'
 import path from 'node:path'
 import { existsSync } from 'node:fs'
-import { execFileSync } from 'node:child_process'
+import { execFile } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 
 import { requireSecrets } from './server/src/lib/env.js'
@@ -45,11 +45,15 @@ if (!existsSync(path.join(DIST, 'index.html'))) {
 // once from the panel's terminal. The generated client is built by
 // `npm run build`, which is a build step and not affected by this.
 
-// Seeding stays, and is not fatal. It is idempotent, only creates the admin
-// account, and exits non-zero when ADMIN_PASSWORD is still a published
-// default. A marketing site should not go down because the admin account is
-// misconfigured — the frontend falls back to its bundled content when the API
-// returns nothing.
+// Seeding runs AFTER the port is open, never before.
+//
+// It spawns a second Node process which starts a Prisma engine, and on
+// Hostinger that engine cannot reliably start (see README) — it can fail, or
+// hang. A synchronous spawn before listen() turned that hang into a site-wide
+// 503: the process was alive but had never bound the port, so the proxy had
+// nothing to talk to. Nothing about creating an admin account needs to block
+// the marketing site from serving, so it no longer does. The timeout is the
+// backstop for the hang; failure is only ever a warning.
 //
 // It is launched as `node <script>` rather than through the npm or npx
 // wrappers. Those are .cmd shims on Windows, and since the fix for
@@ -58,17 +62,17 @@ if (!existsSync(path.join(DIST, 'index.html'))) {
 // point with process.execPath sidesteps both and needs no shell on any
 // platform.
 const SEED = path.join(__dirname, 'server', 'prisma', 'seed.js')
-try {
-  execFileSync(process.execPath, [SEED], { stdio: 'inherit', env: process.env })
-} catch {
-  console.warn('\n  Seed skipped or failed — check ADMIN_PASSWORD. Site still starting.\n')
-}
 
 const app = createApp({ staticDir: DIST })
 
 const server = app.listen(PORT, () => {
   console.log(`\n  RadiantWay listening on port ${PORT}`)
   console.log(`  Frontend: dist/   API: /api   Health: /api/health\n`)
+
+  execFile(process.execPath, [SEED], { env: process.env, timeout: 60_000 }, (err, stdout) => {
+    if (stdout) process.stdout.write(stdout)
+    if (err) console.warn(`\n  Seed skipped or failed (${err.message}). Site is up.\n`)
+  })
 })
 
 const shutdown = async () => {
