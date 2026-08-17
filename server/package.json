@@ -3,22 +3,19 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "RadiantWay Travel — Express + Prisma (MySQL) backend & admin API",
+  "description": "RadiantWay Travel — Express + MySQL backend & admin API",
   "main": "src/index.js",
   "scripts": {
     "dev": "node --watch src/index.js",
     "start": "node src/index.js",
     "seed": "node prisma/seed.js",
-    "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio",
     "db:reset": "prisma migrate reset --force"
   },
   "prisma": {
     "seed": "node prisma/seed.js"
   },
   "dependencies": {
-    "@prisma/client": "^5.19.1",
     "bcryptjs": "^2.4.3",
     "compression": "^1.8.1",
     "cookie-parser": "^1.4.6",
@@ -28,9 +25,10 @@
     "express-rate-limit": "^8.6.2",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
-    "multer": "^2.2.0"
+    "multer": "^2.2.0",
+    "mysql2": "^3.11.5"
   },
   "devDependencies": {
-    "prisma": "^5.19.1"
+    "prisma": "^5.22.0"
   }
 }

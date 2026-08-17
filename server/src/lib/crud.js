@@ -1,12 +1,12 @@
-import prisma from '../prisma.js'
+import db from '../db.js'
 import { deserialize, serialize } from './json.js'
 import { notFound, badRequest } from './httpError.js'
 import { asyncHandler } from '../middleware/error.js'
 
-// Builds a set of Express handlers for a Prisma model.
+// Builds a set of Express handlers for one model.
 //
 // config = {
-//   model:      'package',                 // prisma delegate key
+//   model:      'package',                 // delegate key (see db.js)
 //   jsonFields: ['gallery', 'tags', ...],  // TEXT columns holding JSON
 //   orderBy:    [{ order: 'asc' }],         // default ordering
 //   required:   ['name', 'slug'],          // required on create
@@ -23,7 +23,7 @@ export function crud(config) {
     defaults = {},
   } = config
 
-  const delegate = () => prisma[model]
+  const delegate = () => db[model]
 
   // Keep only whitelisted, writable fields off the request body.
   const pick = (body) => {

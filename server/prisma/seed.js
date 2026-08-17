@@ -8,12 +8,11 @@
 // The content itself used to ship inside the frontend bundle; it lives in
 // seed-data.js now and reaches the site only by way of the database.
 //
-// On a host that cannot run this (Hostinger's process cap panics the Prisma
-// engine — see server.js), import server/prisma/seed-data.sql through
-// phpMyAdmin instead. It is generated from this same data.
+// server/prisma/seed-data.sql is generated from this same data and can be
+// imported through phpMyAdmin instead, if running Node on the host is awkward.
 
 import 'dotenv/config'
-import { PrismaClient } from '@prisma/client'
+import db from '../src/db.js'
 import { hashPassword } from '../src/lib/auth.js'
 import { requireSecrets } from '../src/lib/env.js'
 
@@ -29,12 +28,11 @@ import {
   stats,
 } from './seed-data.js'
 
-const prisma = new PrismaClient()
 const J = (v) => JSON.stringify(v ?? [])
 
 async function seedAdmin() {
   const email = (process.env.ADMIN_EMAIL || 'admin@radiantwaytravel.com').toLowerCase()
-  if (await prisma.adminUser.findUnique({ where: { email } })) {
+  if (await db.adminUser.findUnique({ where: { email } })) {
     console.log(`  · admin user already exists (${email})`)
     return
   }
@@ -42,7 +40,7 @@ async function seedAdmin() {
   // password would silently publish the admin account.
   requireSecrets(['ADMIN_PASSWORD'])
   const passwordHash = await hashPassword(process.env.ADMIN_PASSWORD || 'ChangeMe123!')
-  await prisma.adminUser.create({
+  await db.adminUser.create({
     data: { email, passwordHash, name: process.env.ADMIN_NAME || 'RadiantWay Admin', role: 'admin' },
   })
   console.log(`  ✓ created admin user: ${email}`)
@@ -63,9 +61,9 @@ async function main() {
 
   await seedAdmin()
 
-  await seedIfEmpty('packages', () => prisma.package.count(), async () => {
+  await seedIfEmpty('packages', () => db.package.count(), async () => {
     for (const [i, p] of packages.entries()) {
-      await prisma.package.create({
+      await db.package.create({
         data: {
           slug: p.slug,
           name: p.name,
@@ -95,9 +93,9 @@ async function main() {
     }
   })
 
-  await seedIfEmpty('destinations', () => prisma.destination.count(), async () => {
+  await seedIfEmpty('destinations', () => db.destination.count(), async () => {
     for (const [i, d] of destinations.entries()) {
-      await prisma.destination.create({
+      await db.destination.create({
         data: {
           name: d.name,
           blurb: d.blurb || '',
@@ -111,9 +109,9 @@ async function main() {
     }
   })
 
-  await seedIfEmpty('visas', () => prisma.visa.count(), async () => {
+  await seedIfEmpty('visas', () => db.visa.count(), async () => {
     for (const [i, v] of visas.entries()) {
-      await prisma.visa.create({
+      await db.visa.create({
         data: {
           country: v.country,
           flag: v.flag || '',
@@ -131,9 +129,9 @@ async function main() {
     }
   })
 
-  await seedIfEmpty('testimonials', () => prisma.testimonial.count(), async () => {
+  await seedIfEmpty('testimonials', () => db.testimonial.count(), async () => {
     for (const [i, t] of testimonials.entries()) {
-      await prisma.testimonial.create({
+      await db.testimonial.create({
         data: {
           name: t.name,
           trip: t.trip || '',
@@ -146,22 +144,22 @@ async function main() {
     }
   })
 
-  await seedIfEmpty('faqs', () => prisma.faq.count(), async () => {
+  await seedIfEmpty('faqs', () => db.faq.count(), async () => {
     for (const [i, f] of faqs.entries()) {
-      await prisma.faq.create({
+      await db.faq.create({
         data: { question: f.q, answer: f.a, published: true, order: i },
       })
     }
   })
 
-  await seedIfEmpty('services', () => prisma.service.count(), async () => {
+  await seedIfEmpty('services', () => db.service.count(), async () => {
     for (const [i, s] of services.entries()) {
-      await prisma.service.create({
+      await db.service.create({
         data: { icon: s.icon, title: s.title, description: s.description, group: 'service', order: i },
       })
     }
     for (const [i, w] of whyChooseUs.entries()) {
-      await prisma.service.create({
+      await db.service.create({
         data: { icon: w.icon, title: w.title, description: w.description, group: 'why', order: i },
       })
     }
@@ -169,8 +167,8 @@ async function main() {
 
   // Company details are the site's contact chrome — phone numbers, address,
   // socials. Seeded only when absent, so an admin's edits survive a reseed.
-  await seedIfEmpty('company settings', () => prisma.setting.count({ where: { key: 'company' } }), async () => {
-    await prisma.setting.create({
+  await seedIfEmpty('company settings', () => db.setting.count({ where: { key: 'company' } }), async () => {
+    await db.setting.create({
       data: { key: 'company', value: JSON.stringify({ ...company, stats }) },
     })
   })
@@ -183,4 +181,4 @@ main()
     console.error(e)
     process.exit(1)
   })
-  .finally(() => prisma.$disconnect())
+  .finally(() => db.$disconnect())

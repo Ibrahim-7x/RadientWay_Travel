@@ -64,16 +64,27 @@ npm run seed          # admin account + all demo content
 It is idempotent per table: a table that already has rows is skipped, so it will not duplicate
 or overwrite anything entered through `/admin`. To reseed one table, empty it first.
 
-**Hostinger.** The Prisma engine cannot reliably start there, so load the database by SQL
-import through phpMyAdmin instead, in this order:
+**Hostinger.** The tables are not created by the app, so import
+`server/prisma/radiantway_mysql_schema.sql` through phpMyAdmin once. `npm run seed` then fills
+them, and it also runs on every boot (after the port opens, never before it — see `server.js`).
 
-1. `server/prisma/radiantway_mysql_schema.sql` — tables, no rows
-2. `server/prisma/seed-data.sql` — the demo content
-3. an `INSERT` for the admin account (its password must be bcrypt-hashed, so it is not in the
-   SQL; generate one with `bcrypt.hash(password, 10)`)
+The content is also available as `server/prisma/seed-data.sql` if you would rather import it.
+Both SQL files are generated from the schema and `seed-data.js`, so they cannot drift from what
+the app expects. Regenerate the content one with `npm run seed:sql` after editing
+`seed-data.js`.
 
-Both files are generated from the schema and `seed-data.js`, so they cannot drift from what the
-app expects. Regenerate the content one with `npm run seed:sql` after editing `seed-data.js`.
+## Database access
+
+Queries do not go through Prisma at runtime. Its Rust query engine cannot start under this
+host's process cap — every query dies with `PANIC: timer has gone away`
+([prisma#26073](https://github.com/prisma/prisma/issues/26073), open, no fix) — so
+`server/src/db.js` talks to MySQL through `mysql2` while keeping the Prisma Client call shapes
+the controllers already use.
+
+`schema.prisma` is still the source of truth: `db.js` reads it at boot for the models, columns,
+types and defaults, and the Prisma CLI still generates the SQL above from it. Adding a field
+means editing the schema and re-importing the DDL — no code change. Run `npm test` after
+touching either.
 
 ## Notes
 

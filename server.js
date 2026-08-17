@@ -7,8 +7,7 @@
 // serves dist/ and proxies /api to server/src/index.js — and both entry points
 // share the same createApp(), so behaviour cannot drift between them.
 //
-// Requires `npm run build` first: that produces dist/ and generates the Prisma
-// client against server/prisma/schema.prisma.
+// Requires `npm run build` first: that produces dist/.
 
 import 'dotenv/config'
 import path from 'node:path'
@@ -18,7 +17,7 @@ import { fileURLToPath } from 'node:url'
 
 import { requireSecrets } from './server/src/lib/env.js'
 import { createApp } from './server/src/app.js'
-import prisma from './server/src/prisma.js'
+import db from './server/src/db.js'
 
 // Refuse to boot on a published secret. See server/src/lib/env.js.
 requireSecrets(['JWT_SECRET'])
@@ -40,20 +39,17 @@ if (!existsSync(path.join(DIST, 'index.html'))) {
 // ever needed to run when the schema changed, which is not on every restart.
 //
 // Apply schema changes out of band instead: import
-// server/prisma/radiantway_mysql_schema.sql through phpMyAdmin, or run
-//   node node_modules/prisma/build/index.js migrate deploy --schema server/prisma/schema.prisma
-// once from the panel's terminal. The generated client is built by
-// `npm run build`, which is a build step and not affected by this.
+// server/prisma/radiantway_mysql_schema.sql through phpMyAdmin. Prisma is a
+// build-time tool here now — nothing at runtime loads it (see server/src/db.js).
 
 // Seeding runs AFTER the port is open, never before.
 //
-// It spawns a second Node process which starts a Prisma engine, and on
-// Hostinger that engine cannot reliably start (see README) — it can fail, or
-// hang. A synchronous spawn before listen() turned that hang into a site-wide
-// 503: the process was alive but had never bound the port, so the proxy had
-// nothing to talk to. Nothing about creating an admin account needs to block
-// the marketing site from serving, so it no longer does. The timeout is the
-// backstop for the hang; failure is only ever a warning.
+// It spawns a second Node process, and a spawn is exactly what this host is
+// short of. A synchronous spawn ahead of listen() turned any failure or stall
+// there into a site-wide 503: the process was alive but had never bound the
+// port, so the proxy had nothing to talk to. Nothing about creating an admin
+// account needs to block the marketing site from serving, so it no longer does.
+// The timeout is the backstop for a stall; failure is only ever a warning.
 //
 // It is launched as `node <script>` rather than through the npm or npx
 // wrappers. Those are .cmd shims on Windows, and since the fix for
@@ -76,7 +72,7 @@ const server = app.listen(PORT, () => {
 })
 
 const shutdown = async () => {
-  await prisma.$disconnect()
+  await db.$disconnect()
   server.close(() => process.exit(0))
 }
 process.on('SIGINT', shutdown)

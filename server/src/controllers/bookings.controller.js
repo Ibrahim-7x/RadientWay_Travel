@@ -1,4 +1,4 @@
-import prisma from '../prisma.js'
+import db from '../db.js'
 import { asyncHandler } from '../middleware/error.js'
 import { badRequest, notFound } from '../lib/httpError.js'
 
@@ -11,11 +11,11 @@ export const create = asyncHandler(async (req, res) => {
 
   let packageName = req.body.packageName
   if (!packageName && req.body.packageSlug) {
-    const pkg = await prisma.package.findUnique({ where: { slug: req.body.packageSlug } })
+    const pkg = await db.package.findUnique({ where: { slug: req.body.packageSlug } })
     packageName = pkg?.name
   }
 
-  const booking = await prisma.booking.create({
+  const booking = await db.booking.create({
     data: {
       packageSlug: req.body.packageSlug || null,
       packageName: packageName || null,
@@ -35,7 +35,7 @@ export const create = asyncHandler(async (req, res) => {
 export const list = asyncHandler(async (req, res) => {
   const where = {}
   if (req.query.status && STATUSES.includes(req.query.status)) where.status = req.query.status
-  const rows = await prisma.booking.findMany({ where, orderBy: { createdAt: 'desc' } })
+  const rows = await db.booking.findMany({ where, orderBy: { createdAt: 'desc' } })
   res.json(rows)
 })
 
@@ -46,13 +46,13 @@ export const updateStatus = asyncHandler(async (req, res) => {
   const data = {}
   if (status) data.status = status
   if (notes !== undefined) data.notes = notes
-  const row = await prisma.booking.update({ where: { id }, data }).catch(() => null)
+  const row = await db.booking.update({ where: { id }, data }).catch(() => null)
   if (!row) throw notFound('Booking not found')
   res.json(row)
 })
 
 export const remove = asyncHandler(async (req, res) => {
   const id = Number(req.params.id)
-  await prisma.booking.delete({ where: { id } })
+  await db.booking.delete({ where: { id } })
   res.json({ ok: true, id })
 })

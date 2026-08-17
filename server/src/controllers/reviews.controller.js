@@ -1,4 +1,4 @@
-import prisma from '../prisma.js'
+import db from '../db.js'
 import { asyncHandler } from '../middleware/error.js'
 import { parseJson } from '../lib/json.js'
 
@@ -49,7 +49,7 @@ async function fetchFromGoogle() {
 }
 
 async function fallbackFromSettings() {
-  const row = await prisma.setting.findUnique({ where: { key: COMPANY_KEY } })
+  const row = await db.setting.findUnique({ where: { key: COMPANY_KEY } })
   const company = row ? parseJson(row.value, {}) : {}
   return {
     rating: Number(company.rating) || null,

@@ -1,6 +1,6 @@
 # RadiantWay Travel — Backend & Admin API
 
-Express + Prisma (SQLite) backend powering the public site and the `/admin` panel.
+Express + MySQL backend powering the public site and the `/admin` panel.
 
 ## Quick start
 
@@ -8,7 +8,7 @@ Express + Prisma (SQLite) backend powering the public site and the `/admin` pane
 cd server
 npm install
 cp .env.example .env          # adjust secrets/ports if needed
-npx prisma migrate dev        # creates the SQLite DB + tables
+npx prisma migrate dev        # creates the tables
 npm run seed                  # imports the existing site content + admin user
 npm start                     # http://localhost:4001
 ```
@@ -42,7 +42,6 @@ Change these in `.env` before seeding (or update the `AdminUser` row later).
 | `npm start` | Run the API |
 | `npm run dev` | Run with `node --watch` (auto-restart) |
 | `npm run seed` | Seed content + admin user (idempotent — skips populated tables) |
-| `npm run prisma:studio` | Open Prisma Studio (visual DB browser) |
 | `npm run db:reset` | Drop, re-migrate and re-seed the DB |
 
 ## API overview
@@ -73,9 +72,11 @@ Base URL: `/api`
 
 ## Data model
 
-SQLite via Prisma (`prisma/schema.prisma`). Array/object fields (galleries, tags,
+MySQL, described by `prisma/schema.prisma`. Array/object fields (galleries, tags,
 itineraries, document lists) are stored as JSON strings in TEXT columns and
 (de)serialised in the app layer (`src/lib/json.js`), keeping the schema portable.
 
-To move to PostgreSQL later: change the `datasource` provider + `DATABASE_URL`,
-then re-run `prisma migrate dev`.
+Queries run through `src/db.js`, not the Prisma Client — Prisma's query engine cannot
+start on the production host. The schema file stays authoritative either way: `db.js`
+reads it for columns, types and defaults, and the Prisma CLI generates migrations and
+the phpMyAdmin SQL from it. See the root README, and `npm test` at the repo root.

@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import { requireSecrets } from './lib/env.js'
 import { createApp } from './app.js'
-import prisma from './prisma.js'
+import db from './db.js'
 
 // First statement that runs: a production process which fell back to the
 // repo's example JWT_SECRET would serve forged admin tokens quite happily.
@@ -18,7 +18,7 @@ const server = app.listen(PORT, () => {
 
 // Graceful shutdown.
 const shutdown = async () => {
-  await prisma.$disconnect()
+  await db.$disconnect()
   server.close(() => process.exit(0))
 }
 process.on('SIGINT', shutdown)
