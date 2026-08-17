@@ -1,8 +1,10 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { api } from '../lib/api'
 
-// Static data doubles as the instant first-paint value AND an offline fallback:
-// if the API is unreachable, the site still renders the seeded content.
+// Static data is the instant first-paint value, and the fallback for an API
+// that cannot be reached at all. It is NOT a fallback for an empty database:
+// once a response arrives it replaces this, empty or not, so content deleted
+// in /admin disappears from the site instead of reverting to the demo data.
 import { packages as staticPackages, isUmrahPackage } from '../data/packages'
 import { destinations as staticDestinations } from '../data/destinations'
 import { visas as staticVisas } from '../data/visas'
@@ -43,12 +45,15 @@ export function ContentProvider({ children }) {
           api.get('/settings', { auth: false }),
         ])
         if (!alive) return
-        if (pkgs?.length) setPackages(pkgs)
+        // A reply that arrived is authoritative, empty included: an empty
+        // database means the section is empty, not that it should show the
+        // bundled demo content. Only a failed request falls back, in catch.
+        if (pkgs) setPackages(pkgs)
         if (dests) setDestinations(normDestinations(dests))
-        if (vs?.length) setVisas(vs)
-        if (tst?.length) setTestimonials(tst)
-        if (fq?.length) setFaqs(normFaqs(fq))
-        if (svc?.length) {
+        if (vs) setVisas(vs)
+        if (tst) setTestimonials(tst)
+        if (fq) setFaqs(normFaqs(fq))
+        if (svc) {
           setServices(svc.filter((s) => s.group !== 'why'))
           setWhyChooseUs(svc.filter((s) => s.group === 'why'))
         }
