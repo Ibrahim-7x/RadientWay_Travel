@@ -15,17 +15,29 @@ const { default: db, driver, parseSchema, translate, connectionOptions } =
 
 // ── connection string ───────────────────────────────────────────────────────
 
-// localhost must not reach the resolver, or Node picks ::1 and a grant written
-// for 'user'@'localhost' refuses the connection as a bad password.
-assert.equal(connectionOptions('mysql://u:p@localhost:3306/d').host, '127.0.0.1')
-assert.equal(connectionOptions('mysql://u:p@db.example.com/d').host, 'db.example.com')
-assert.equal(connectionOptions('mysql://u:p@localhost/d').port, 3306, 'port defaults')
+// A local database is reached through the socket, because that is what a
+// 'user'@'localhost' grant means once skip-name-resolve is on.
+const SOCK = '/var/lib/mysql/mysql.sock'
+assert.equal(connectionOptions('mysql://u:p@localhost:3306/d', SOCK).socketPath, SOCK)
+assert.equal(connectionOptions('mysql://u:p@127.0.0.1:3306/d', SOCK).socketPath, SOCK)
+assert.equal(connectionOptions('mysql://u:p@[::1]:3306/d', SOCK).socketPath, SOCK)
+
+// A remote database is never socket-connected, however many sockets are around.
+const remote = connectionOptions('mysql://u:p@db.example.com:3307/d', SOCK)
+assert.equal(remote.host, 'db.example.com')
+assert.equal(remote.port, 3307)
+assert.ok(!remote.socketPath)
+
+// With no socket on the box it falls back to TCP — but never to the literal
+// "localhost", or Node resolves it to ::1 and the grant misses again.
+assert.equal(connectionOptions('mysql://u:p@localhost:3306/d', null).host, '127.0.0.1')
+assert.equal(connectionOptions('mysql://u:p@localhost/d', null).port, 3306, 'port defaults')
 
 // A hosting panel's generated password contains characters that are legal in a
 // URL and characters that are not; both have to arrive at MySQL intact.
-assert.equal(connectionOptions('mysql://u:Pass%40Word2026@localhost/d').password, 'Pass@Word2026')
-assert.equal(connectionOptions('mysql://u:Pass@Word2026@localhost/d').password, 'Pass@Word2026')
-assert.equal(connectionOptions('mysql://u:p@localhost/u382_radiantway').database, 'u382_radiantway')
+assert.equal(connectionOptions('mysql://u:Pass%40Word2026@localhost/d', null).password, 'Pass@Word2026')
+assert.equal(connectionOptions('mysql://u:Pass@Word2026@localhost/d', null).password, 'Pass@Word2026')
+assert.equal(connectionOptions('mysql://u:p@localhost/u382_radiantway', null).database, 'u382_radiantway')
 
 // ── schema parsing ──────────────────────────────────────────────────────────
 

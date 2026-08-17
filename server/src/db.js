@@ -19,7 +19,7 @@
 // here — and a typo'd field name fails loudly instead of reaching SQL.
 
 import path from 'node:path'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import mysql from 'mysql2/promise'
 
@@ -75,20 +75,44 @@ const MODELS = parseSchema(
 
 // ── Connection ──────────────────────────────────────────────────────────────
 
+const LOOPBACK = new Set(['localhost', '127.0.0.1', '::1', '[::1]'])
+
+// A MySQL account is identified by user *and* host, and on a cPanel-style host
+// the grant is written for 'user'@'localhost'. With skip-name-resolve on —
+// which is the default there — 'localhost' means the unix socket and nothing
+// else, so a TCP connection is a different account:
+//
+//   Access denied for user 'u…_rwadmin'@'127.0.0.1' (using password: YES)
+//
+// naming the password when the address was what did not match. So when the URL
+// says the database is local, connect the way the grant expects and only fall
+// back to TCP if there is no socket to be found.
+const SOCKET_PATHS = [
+  '/var/lib/mysql/mysql.sock', // CloudLinux / cPanel
+  '/var/run/mysqld/mysqld.sock', // Debian / Ubuntu
+  '/tmp/mysql.sock',
+]
+
+export function findSocket() {
+  if (process.env.DB_SOCKET_PATH) return process.env.DB_SOCKET_PATH // explicit wins
+  return SOCKET_PATHS.find((p) => existsSync(p)) ?? null
+}
+
 // Parsed by hand rather than handed to mysql2 as a URI so an unescaped `@` in
 // the password — which is what a generated hosting password usually contains —
 // resolves the same way a browser would resolve it, and percent-encoded
 // passwords still decode correctly.
-export function connectionOptions(url) {
+//
+// The socket is a parameter so this stays a pure function of its inputs.
+export function connectionOptions(url, socket = findSocket()) {
   const u = new URL(url)
+  const local = LOOPBACK.has(u.hostname)
   return {
-    // "localhost" is not handed to the resolver: Node has preferred the IPv6
-    // answer since v17, and a MySQL account granted to 'user'@'localhost' is an
-    // IPv4/socket grant — the connection arrives from ::1 and is refused with
-    // `Access denied for user '…'@'::1' (using password: YES)`, which reads as
-    // a wrong password rather than a wrong address family.
-    host: u.hostname === 'localhost' ? '127.0.0.1' : u.hostname,
-    port: Number(u.port) || 3306,
+    ...(local && socket
+      ? { socketPath: socket }
+      : // Never the literal "localhost": Node has preferred the IPv6 answer
+        // since v17, so the connection would arrive from ::1 instead.
+        { host: local ? '127.0.0.1' : u.hostname, port: Number(u.port) || 3306 }),
     user: decodeURIComponent(u.username),
     password: decodeURIComponent(u.password),
     database: decodeURIComponent(u.pathname.replace(/^\//, '')),
@@ -101,8 +125,10 @@ if (!DATABASE_URL) {
   process.exit(1)
 }
 
+const options = connectionOptions(DATABASE_URL)
+
 const pool = mysql.createPool({
-  ...connectionOptions(DATABASE_URL),
+  ...options,
   // Shared hosting caps concurrent MySQL connections far below what a
   // core-count-derived default would open. Five is plenty for this traffic.
   connectionLimit: Number(process.env.DB_CONNECTION_LIMIT) || 5,
@@ -113,6 +139,36 @@ const pool = mysql.createPool({
   timezone: 'Z',
   supportBigNumbers: true,
 })
+
+/**
+ * One connection attempt at boot, reported in a line or two.
+ *
+ * Without it the first sign of a bad DATABASE_URL is the same stack trace
+ * repeated per request, from whichever route the visitor happened to hit —
+ * which says nothing about where it was connecting or as whom. Returns whether
+ * the database is usable, so the caller can skip work that needs it.
+ */
+export async function checkConnection() {
+  const where = options.socketPath
+    ? `socket ${options.socketPath}`
+    : `${options.host}:${options.port}`
+  try {
+    await pool.query('SELECT 1')
+    console.log(`  DB: connected to ${options.database} as ${options.user} via ${where}`)
+    return true
+  } catch (err) {
+    console.error(
+      `\n  DB: cannot connect to ${options.database} as ${options.user} via ${where}\n` +
+        `      ${err.code}: ${err.message}\n` +
+        (err.code === 'ER_ACCESS_DENIED_ERROR'
+          ? `      The account exists for a different host, or the password is stale.\n` +
+            `      Check the user's host in phpMyAdmin, and DATABASE_URL's password.\n` +
+            `      Set DB_SOCKET_PATH to force a socket if the grant is 'localhost'-only.\n`
+          : ''),
+    )
+    return false
+  }
+}
 
 // Prisma's error codes, because middleware/error.js maps them to 409 and 404.
 export function translate(err) {

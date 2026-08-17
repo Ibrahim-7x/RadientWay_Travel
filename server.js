@@ -17,7 +17,7 @@ import { fileURLToPath } from 'node:url'
 
 import { requireSecrets } from './server/src/lib/env.js'
 import { createApp } from './server/src/app.js'
-import db from './server/src/db.js'
+import db, { checkConnection } from './server/src/db.js'
 
 // Refuse to boot on a published secret. See server/src/lib/env.js.
 requireSecrets(['JWT_SECRET'])
@@ -61,9 +61,13 @@ const SEED = path.join(__dirname, 'server', 'prisma', 'seed.js')
 
 const app = createApp({ staticDir: DIST })
 
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, async () => {
   console.log(`\n  RadiantWay listening on port ${PORT}`)
   console.log(`  Frontend: dist/   API: /api   Health: /api/health\n`)
+
+  // Seeding needs the database, so there is nothing to learn from spawning a
+  // process that will only fail the same way the check just did.
+  if (!(await checkConnection())) return
 
   execFile(process.execPath, [SEED], { env: process.env, timeout: 60_000 }, (err, stdout) => {
     if (stdout) process.stdout.write(stdout)
