@@ -27,6 +27,19 @@ const PUBLISHED_DEFAULTS = new Set([
 
 const MIN_JWT_SECRET_LENGTH = 32
 
+// Every placeholder in .env.example contains this. Panels import that file
+// wholesale, and the ones that are not secrets used to sail straight through:
+// an unedited UPLOAD_DIR produced `EACCES: mkdir /home/REPLACE_WITH_YOUR_PATH/…`
+// from deep inside multer, which reads as a permissions bug rather than an
+// unedited config. Catch the marker in any variable instead.
+const PLACEHOLDER_MARKER = 'REPLACE_WITH_'
+
+function unedited() {
+  return Object.entries(process.env)
+    .filter(([, v]) => typeof v === 'string' && v.includes(PLACEHOLDER_MARKER))
+    .map(([k]) => `${k} is still a placeholder from .env.example`)
+}
+
 function inspect(name) {
   const value = process.env[name]
   if (!value) return `${name} is not set`
@@ -41,11 +54,12 @@ function inspect(name) {
 
 /**
  * Exits the process if any named secret is missing, still set to a published
- * default, or too weak. Outside production this only warns, so local work and
- * CI keep running with the dev fallbacks.
+ * default, or too weak — or if any environment variable at all still holds a
+ * REPLACE_WITH_ placeholder. Outside production this only warns, so local work
+ * and CI keep running with the dev fallbacks.
  */
 export function requireSecrets(names) {
-  const problems = names.map(inspect).filter(Boolean)
+  const problems = [...new Set([...names.map(inspect).filter(Boolean), ...unedited()])]
   if (!problems.length) return
 
   const detail = problems.map((p) => `    - ${p}`).join('\n')
