@@ -32,8 +32,6 @@ export function createApp({ staticDir } = {}) {
   app.set('trust proxy', Number(process.env.TRUST_PROXY_HOPS ?? 1))
 
   // PUBLIC_URL is this site's own address, so it is always a legitimate origin.
-  // Including it automatically means a same-origin POST (the contact form) can
-  // never be rejected just because CLIENT_ORIGIN forgot to list the site itself.
   const origins = [
     ...(process.env.CLIENT_ORIGIN || 'http://localhost:5173').split(','),
     process.env.PUBLIC_URL || '',
@@ -41,13 +39,35 @@ export function createApp({ staticDir } = {}) {
     .map((s) => s.trim().replace(/\/$/, ''))
     .filter(Boolean)
 
-  const corsMw = cors({
-    origin: (origin, cb) => {
-      // Allow tools with no origin (curl, same-origin GETs) and the whitelist.
-      if (!origin || origins.includes(origin.replace(/\/$/, ''))) return cb(null, true)
-      cb(new Error(`Origin not allowed by CORS: ${origin}`))
-    },
-    credentials: true,
+  // A request whose Origin is this very host is same-origin: the browser sends
+  // an Origin header on cross-site-capable methods (POST included) even when
+  // the page and the API share a domain, and in the single-process deployment
+  // they always do — server.js serves dist/ and /api together.
+  //
+  // Recognising that from the request itself rather than from configuration is
+  // what stops the site rejecting its own admin login when PUBLIC_URL is unset,
+  // which is exactly what happened in production. req.hostname honours
+  // X-Forwarded-Host, so it is the public domain behind the host's proxy.
+  // Scheme is not compared: the proxy terminates TLS and forwards plain HTTP,
+  // so requiring a match would fail on every request it forwards.
+  const isSameOrigin = (origin, req) => {
+    try {
+      return new URL(origin).hostname === req.hostname
+    } catch {
+      return false
+    }
+  }
+
+  const corsMw = cors((req, cb) => {
+    const origin = req.headers.origin
+    // No Origin at all means a non-browser caller (curl, a health check) or a
+    // plain same-origin GET — nothing for CORS to protect against.
+    if (!origin || isSameOrigin(origin, req) || origins.includes(origin.replace(/\/$/, ''))) {
+      return cb(null, { origin: true, credentials: true })
+    }
+    const err = new Error(`Origin not allowed by CORS: ${origin}`)
+    err.status = 403 // Not a server fault — it was reported to the browser as a 500.
+    cb(err)
   })
 
   app.use(express.json({ limit: '2mb' }))
