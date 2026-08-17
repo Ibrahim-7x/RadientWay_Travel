@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "RadiantWay Travel — Express + Prisma (SQLite) backend & admin API",
+  "description": "RadiantWay Travel — Express + Prisma (MySQL) backend & admin API",
   "main": "src/index.js",
   "scripts": {
     "dev": "node --watch src/index.js",

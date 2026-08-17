@@ -25,7 +25,6 @@ requireSecrets(['JWT_SECRET'])
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const DIST = path.join(__dirname, 'dist')
-const SCHEMA = path.join(__dirname, 'server', 'prisma', 'schema.prisma')
 const PORT = Number(process.env.PORT) || 3000
 
 if (!existsSync(path.join(DIST, 'index.html'))) {
@@ -33,51 +32,32 @@ if (!existsSync(path.join(DIST, 'index.html'))) {
   process.exit(1)
 }
 
-// Child processes are launched as `node <script>` rather than through the npm
-// or npx wrappers. Those are .cmd shims on Windows, and since the fix for
-// CVE-2024-27980 Node refuses to spawn a .cmd without shell:true — which is
-// itself deprecated for passing arguments (DEP0190). Calling the JS entry point
-// with process.execPath sidesteps both and needs no shell on any platform.
-const PRISMA_CLI = path.join(__dirname, 'node_modules', 'prisma', 'build', 'index.js')
-const SEED = path.join(__dirname, 'server', 'prisma', 'seed.js')
-
-function prismaCli(args, { fatal }) {
-  try {
-    if (!existsSync(PRISMA_CLI)) throw new Error(`prisma CLI not found at ${PRISMA_CLI}`)
-    execFileSync(process.execPath, [PRISMA_CLI, ...args, '--schema', SCHEMA], {
-      stdio: 'inherit',
-      env: process.env,
-    })
-    return true
-  } catch (err) {
-    const line = `prisma ${args.join(' ')} failed: ${err.message}`
-    if (fatal) {
-      console.error(`\n  ${line}\n`)
-      process.exit(1)
-    }
-    console.warn(`\n  ${line}\n  Continuing — the public site does not depend on it.\n`)
-    return false
-  }
-}
-
-// Schema first: without it every query fails, so a failure here is fatal.
+// Migrations do NOT run here.
 //
-// Only when the database file is missing, though. `migrate deploy` spawns
-// Prisma's schema-engine binary, and shared hosts cap process count — on
-// Hostinger that spawn fails with EAGAIN and took the whole site down. An
-// existing database has already been migrated, so the common boot skips it.
-// After changing the schema, either delete nothing and run
-// `node node_modules/prisma/build/index.js migrate deploy --schema server/prisma/schema.prisma`
-// once from the panel's terminal, or upload a locally migrated .db file.
-const dbFile = (process.env.DATABASE_URL || '').replace(/^file:/, '')
-if (!dbFile || !existsSync(path.resolve(__dirname, dbFile))) {
-  prismaCli(['migrate', 'deploy'], { fatal: true })
-}
+// `prisma migrate deploy` spawns the schema-engine binary, a second heavyweight
+// process. Hostinger caps process count, so that spawn failed with EAGAIN on
+// every boot and — being fatal — served a 503 for the whole site. It also only
+// ever needed to run when the schema changed, which is not on every restart.
+//
+// Apply schema changes out of band instead: import
+// server/prisma/radiantway_mysql_schema.sql through phpMyAdmin, or run
+//   node node_modules/prisma/build/index.js migrate deploy --schema server/prisma/schema.prisma
+// once from the panel's terminal. The generated client is built by
+// `npm run build`, which is a build step and not affected by this.
 
-// Seeding is not. It is idempotent and only fills an empty database, and it
-// exits non-zero when ADMIN_PASSWORD is still a published default. A marketing
-// site should not go down because the admin account is misconfigured — the
-// frontend falls back to its bundled content when the API returns nothing.
+// Seeding stays, and is not fatal. It is idempotent, only creates the admin
+// account, and exits non-zero when ADMIN_PASSWORD is still a published
+// default. A marketing site should not go down because the admin account is
+// misconfigured — the frontend falls back to its bundled content when the API
+// returns nothing.
+//
+// It is launched as `node <script>` rather than through the npm or npx
+// wrappers. Those are .cmd shims on Windows, and since the fix for
+// CVE-2024-27980 Node refuses to spawn a .cmd without shell:true — which is
+// itself deprecated for passing arguments (DEP0190). Calling the JS entry
+// point with process.execPath sidesteps both and needs no shell on any
+// platform.
+const SEED = path.join(__dirname, 'server', 'prisma', 'seed.js')
 try {
   execFileSync(process.execPath, [SEED], { stdio: 'inherit', env: process.env })
 } catch {

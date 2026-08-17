@@ -1,29 +1,33 @@
 // RadiantWay Travel — data model.
-// SQLite via Prisma. Array/object fields (galleries, tags, itineraries…) are
+// MySQL via Prisma. Array/object fields (galleries, tags, itineraries…) are
 // stored as JSON strings in TEXT columns and (de)serialised in the app layer
 // (see src/lib/json.js). This keeps the schema portable and avoids relying on
-// SQLite JSON column support.
+// the database's own JSON support.
+//
+// Every free-text and JSON-string column carries an explicit @db.Text or
+// @db.LongText. Prisma's default for String on MySQL is VARCHAR(191), which
+// silently truncates an itinerary or a gallery list on write.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
 // ── Auth ────────────────────────────────────────────────────────────────────
 model AdminUser {
-  id           Int      @id @default(autoincrement())
-  email        String   @unique
+  id           Int       @id @default(autoincrement())
+  email        String    @unique
   passwordHash String
   name         String
-  role         String   @default("admin") // admin | editor
-  active       Boolean  @default(true)
+  role         String    @default("admin") // admin | editor
+  active       Boolean   @default(true)
   lastLoginAt  DateTime?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 }
 
 // ── Content: Tour & Umrah packages ───────────────────────────────────────────
@@ -35,7 +39,7 @@ model Package {
   country    String
   region     String
   city       String
-  tagline    String
+  tagline    String   @db.Text
   nights     Int
   days       Int
   occupancy  String
@@ -46,12 +50,12 @@ model Package {
   featured   Boolean  @default(false)
   published  Boolean  @default(true)
   order      Int      @default(0)
-  image      String
-  gallery    String   @default("[]") // JSON string[]
-  tags       String   @default("[]") // JSON string[]
-  includes   String   @default("[]") // JSON string[]
-  highlights String   @default("[]") // JSON string[]
-  itinerary  String   @default("[]") // JSON {day,title,detail}[]
+  image      String   @db.Text
+  gallery    String   @default("[]") @db.Text // JSON string[]
+  tags       String   @default("[]") @db.Text // JSON string[]
+  includes   String   @default("[]") @db.Text // JSON string[]
+  highlights String   @default("[]") @db.Text // JSON string[]
+  itinerary  String   @default("[]") @db.LongText // JSON {day,title,detail}[]
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }
@@ -60,10 +64,10 @@ model Package {
 model Destination {
   id          Int      @id @default(autoincrement())
   name        String
-  blurb       String
-  image       String
+  blurb       String   @db.Text
+  image       String   @db.Text
   priceFrom   Int
-  packageSlug String?  // optional link to a Package.slug
+  packageSlug String? // optional link to a Package.slug
   published   Boolean  @default(true)
   order       Int      @default(0)
   createdAt   DateTime @default(now())
@@ -77,11 +81,11 @@ model Visa {
   flag              String   @default("")
   type              String
   processing        String
-  note              String   @default("")
+  note              String   @default("") @db.Text
   price             String   @default("")
-  about             String   @default("")
-  documentsRequired String   @default("[]") // JSON string[]
-  documentsProvided String   @default("[]") // JSON string[]
+  about             String   @default("") @db.Text
+  documentsRequired String   @default("[]") @db.Text // JSON string[]
+  documentsProvided String   @default("[]") @db.Text // JSON string[]
   published         Boolean  @default(true)
   order             Int      @default(0)
   createdAt         DateTime @default(now())
@@ -94,7 +98,7 @@ model Testimonial {
   name      String
   trip      String
   rating    Int      @default(5)
-  quote     String
+  quote     String   @db.Text
   published Boolean  @default(true)
   order     Int      @default(0)
   createdAt DateTime @default(now())
@@ -104,8 +108,8 @@ model Testimonial {
 // ── Content: FAQs ────────────────────────────────────────────────────────────
 model Faq {
   id        Int      @id @default(autoincrement())
-  question  String
-  answer    String
+  question  String   @db.Text
+  answer    String   @db.Text
   published Boolean  @default(true)
   order     Int      @default(0)
   createdAt DateTime @default(now())
@@ -117,7 +121,7 @@ model Service {
   id          Int      @id @default(autoincrement())
   icon        String   @default("Globe")
   title       String
-  description String
+  description String   @db.Text
   group       String   @default("service") // service | why
   published   Boolean  @default(true)
   order       Int      @default(0)
@@ -133,10 +137,10 @@ model Booking {
   name        String
   email       String
   phone       String
-  date        String?  // preferred start date (yyyy-mm-dd)
+  date        String? // preferred start date (yyyy-mm-dd)
   travellers  Int      @default(1)
   occupancy   String   @default("")
-  notes       String   @default("")
+  notes       String   @default("") @db.Text
   status      String   @default("new") // new | contacted | confirmed | cancelled
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -148,7 +152,7 @@ model Lead {
   name      String
   email     String
   phone     String   @default("")
-  message   String
+  message   String   @db.Text
   status    String   @default("new") // new | read | replied | archived
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -165,6 +169,6 @@ model Subscriber {
 // ── Site settings (company info) — key/value with JSON values ────────────────
 model Setting {
   key       String   @id
-  value     String   @default("{}") // JSON blob
+  value     String   @default("{}") @db.LongText // JSON blob
   updatedAt DateTime @updatedAt
 }

@@ -6,19 +6,37 @@
 #   frontend (Vite dev) → http://localhost:5273
 #   API                 → http://localhost:4101/api
 #   frontend (prod)     → http://localhost:8081   (profile: prod)
+#   MySQL               → localhost:3307
 #
 # Container-internal ports stay at the project's defaults (5173 / 4001).
 name: radiantway
 
 services:
 
+  # ── MySQL. The app's datasource; 3307 on the host to clear the Farland stack. ──
+  db:
+    image: mysql:8.4
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: radiantway
+      MYSQL_DATABASE: radiantway
+      MYSQL_USER: radiantway
+      MYSQL_PASSWORD: radiantway
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      # The API's first act is to migrate, which fails against a half-started
+      # server. depends_on alone only waits for the container, not for mysqld.
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-pradiantway"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
   # ── Express API. Applies migrations + idempotent seed on start. ──
   server:
     build:
-      # Repo root, so the image can include src/data — prisma/seed.js imports it
-      # as ../../src/data/*.js. See server/Dockerfile.
-      context: .
-      dockerfile: server/Dockerfile
+      context: ./server
       target: development
     ports:
       - "4101:4001"
@@ -27,13 +45,14 @@ services:
       # Anonymous volume: keeps the image's Linux node_modules (and the musl
       # Prisma engine) instead of the host's Windows-built ones.
       - /app/node_modules
-      # Where seed.js's ../../src/data resolves to once WORKDIR is /app.
-      - ./src/data:/src/data:ro
+    depends_on:
+      db:
+        condition: service_healthy
     environment:
       # These override server/.env — dotenv does not overwrite already-set vars.
       NODE_ENV: development
       PORT: "4001"
-      DATABASE_URL: "file:./dev.db"
+      DATABASE_URL: "mysql://radiantway:radiantway@db:3306/radiantway"
       # Origins the browser actually uses against the published host port. The
       # Vite container proxies /api, so those requests arrive without an Origin.
       CLIENT_ORIGIN: "http://localhost:5273,http://127.0.0.1:5273,http://localhost:8081,http://127.0.0.1:8081"
@@ -85,3 +104,6 @@ services:
       - server
     profiles:
       - prod
+
+volumes:
+  db-data:
