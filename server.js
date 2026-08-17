@@ -61,7 +61,18 @@ function prismaCli(args, { fatal }) {
 }
 
 // Schema first: without it every query fails, so a failure here is fatal.
-prismaCli(['migrate', 'deploy'], { fatal: true })
+//
+// Only when the database file is missing, though. `migrate deploy` spawns
+// Prisma's schema-engine binary, and shared hosts cap process count — on
+// Hostinger that spawn fails with EAGAIN and took the whole site down. An
+// existing database has already been migrated, so the common boot skips it.
+// After changing the schema, either delete nothing and run
+// `node node_modules/prisma/build/index.js migrate deploy --schema server/prisma/schema.prisma`
+// once from the panel's terminal, or upload a locally migrated .db file.
+const dbFile = (process.env.DATABASE_URL || '').replace(/^file:/, '')
+if (!dbFile || !existsSync(path.resolve(__dirname, dbFile))) {
+  prismaCli(['migrate', 'deploy'], { fatal: true })
+}
 
 // Seeding is not. It is idempotent and only fills an empty database, and it
 // exits non-zero when ADMIN_PASSWORD is still a published default. A marketing
