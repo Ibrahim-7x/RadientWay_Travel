@@ -4,7 +4,6 @@ import { motion } from 'framer-motion'
 import {
   MapPin, Moon, Users, Star, Check, ArrowLeft, Building2, Loader2,
 } from 'lucide-react'
-import { company } from '../data/company'
 import { api } from '../lib/api'
 import { isUmrahPackage, packagePath, imgSrcSet } from '../data/packages'
 import { useContent } from '../context/ContentContext'
@@ -17,7 +16,7 @@ import { fadeUp, stagger, viewportOnce } from '../lib/motion'
 export default function TourDetail() {
   const { slug } = useParams()
   const { pathname } = useLocation()
-  const { getPackageBySlug, loading: contentLoading } = useContent()
+  const { getPackageBySlug, company, loading: contentLoading } = useContent()
   // Which listing this page hangs off — /tours or /umrah.
   const onUmrahRoute = pathname.startsWith('/umrah')
   // Prefer already-loaded content; otherwise fetch this package by slug so

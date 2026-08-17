@@ -3,10 +3,11 @@ import { motion } from 'framer-motion'
 import { Send, CheckCircle2 } from 'lucide-react'
 import AnimatedButton from '../ui/AnimatedButton'
 import GradientBlob from '../ui/GradientBlob'
-import { company } from '../../data/company'
 import { fadeUp, stagger, viewportOnce } from '../../lib/motion'
+import { useContent } from '../../context/ContentContext'
 
 export default function CtaBanner() {
+  const { company } = useContent()
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
 

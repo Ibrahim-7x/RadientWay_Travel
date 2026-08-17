@@ -3,12 +3,12 @@ import { useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Phone, Mail, MapPin, Clock, Send, CheckCircle2, Loader2 } from 'lucide-react'
 import PageHero from '../components/ui/PageHero'
-import { company } from '../data/company'
 import { getIcon } from '../lib/icons'
 import { img } from '../data/packages'
 import { api } from '../lib/api'
 import { useToast } from '../context/ToastContext'
 import { fadeUp, stagger, viewportOnce } from '../lib/motion'
+import { useContent } from '../context/ContentContext'
 
 const contactItems = [
   { icon: Phone, label: 'Call us', value: company.phone, href: company.phoneHref },
@@ -18,6 +18,7 @@ const contactItems = [
 ]
 
 export default function Contact() {
+  const { company } = useContent()
   const toast = useToast()
   const [params] = useSearchParams()
   const [sent, setSent] = useState(false)
@@ -86,7 +87,7 @@ export default function Contact() {
             </motion.div>
 
             <div className="mt-6 flex gap-3">
-              {company.socials.map((s) => {
+              {(company.socials || []).map((s) => {
                 const Icon = getIcon(s.icon)
                 return (
                   <a

@@ -1,9 +1,10 @@
 import { motion } from 'framer-motion'
 import WhatsAppIcon from '../ui/WhatsAppIcon'
-import { company } from '../../data/company'
+import { useContent } from '../../context/ContentContext'
 
 // Floating WhatsApp action button, bottom-right.
 export default function WhatsAppFab() {
+  const { company } = useContent()
   return (
     <motion.a
       href={company.whatsapp}

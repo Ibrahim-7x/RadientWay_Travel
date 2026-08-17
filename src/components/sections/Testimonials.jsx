@@ -4,10 +4,9 @@ import { Quote, ChevronLeft, ChevronRight } from 'lucide-react'
 import SectionHeading from '../ui/SectionHeading'
 import StarRating from '../ui/StarRating'
 import { useContent } from '../../context/ContentContext'
-import { company } from '../../data/company'
 
 export default function Testimonials() {
-  const { testimonials } = useContent()
+  const { testimonials, company } = useContent()
   const [index, setIndex] = useState(0)
   const [dir, setDir] = useState(1)
 

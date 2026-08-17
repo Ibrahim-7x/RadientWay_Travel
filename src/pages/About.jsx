@@ -5,9 +5,9 @@ import SectionHeading from '../components/ui/SectionHeading'
 import SmartImage from '../components/ui/SmartImage'
 import Counter from '../components/ui/Counter'
 import AnimatedButton from '../components/ui/AnimatedButton'
-import { company, stats } from '../data/company'
 import { img } from '../data/packages'
 import { fadeUp, fromRight, stagger, viewportOnce } from '../lib/motion'
+import { useContent } from '../context/ContentContext'
 
 const values = [
   { icon: HeartHandshake, title: 'Personal', text: 'A real human consultant who knows your name and your trip.' },
@@ -17,6 +17,7 @@ const values = [
 ]
 
 export default function About() {
+  const { company, stats } = useContent()
   return (
     <>
       <PageHero

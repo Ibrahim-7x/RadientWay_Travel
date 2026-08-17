@@ -1,9 +1,10 @@
 import { motion } from 'framer-motion'
 import Counter from '../ui/Counter'
-import { stats } from '../../data/company'
 import { stagger, fadeUp, viewportOnce } from '../../lib/motion'
+import { useContent } from '../../context/ContentContext'
 
 export default function Stats() {
+  const { stats } = useContent()
   return (
     <section className="relative z-20 -mt-16">
       <div className="container-x">

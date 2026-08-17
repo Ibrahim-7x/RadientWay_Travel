@@ -4,11 +4,10 @@ import { Plus, MessageCircle } from 'lucide-react'
 import SectionHeading from '../ui/SectionHeading'
 import AnimatedButton from '../ui/AnimatedButton'
 import { useContent } from '../../context/ContentContext'
-import { company } from '../../data/company'
 import { stagger, fadeUp, viewportOnce } from '../../lib/motion'
 
 export default function Faq() {
-  const { faqs } = useContent()
+  const { faqs, company } = useContent()
   const [open, setOpen] = useState(0)
 
   return (

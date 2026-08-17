@@ -1,10 +1,10 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Phone, Mail, MapPin, ArrowUp } from 'lucide-react'
-import { company } from '../../data/company'
 import { navLinks } from '../../data/navigation'
 import { getIcon } from '../../lib/icons'
 import Logo from './Logo'
+import { useContent } from '../../context/ContentContext'
 
 const serviceLinks = [
   { label: 'Tour Packages', to: '/tours' },
@@ -14,6 +14,7 @@ const serviceLinks = [
 ]
 
 export default function Footer() {
+  const { company } = useContent()
   return (
     <footer className="relative overflow-hidden bg-navy-950 text-navy-100">
       <div className="pointer-events-none absolute inset-0 bg-radiant-glow opacity-30" />
@@ -28,7 +29,7 @@ export default function Footer() {
               {company.intro}
             </p>
             <div className="flex gap-3">
-              {company.socials.map((s) => {
+              {(company.socials || []).map((s) => {
                 const Icon = getIcon(s.icon)
                 return (
                   <motion.a

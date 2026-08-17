@@ -1,44 +1,9 @@
-export const company = {
-  name: 'RadiantWay Travel',
-  shortName: 'RadiantWay',
-  tagline: 'Effortless Journeys. Lasting Memories.',
-  intro:
-    'UAE-based travel experts with global reach. We craft tailored tour packages, handle your visas, and take care of every detail — so all you have to do is travel.',
-  phone: '+971 54 786 1293',
-  phoneHref: 'tel:+971547861293',
-  // Department contact numbers shown in the navbar dropdown. Editable from
-  // Admin → Settings. Defaults to the main number until you set real ones.
-  holidaysPhone: '+971 54 786 1293',
-  visaPhone: '+971 54 786 1293',
-  whatsapp: 'https://wa.me/971547861293',
-  email: 'info@radiantwaytravel.com',
-  emailHref: 'mailto:info@radiantwaytravel.com',
-  address:
-    'Office No: 17, 28th Floor, Aspin Commercial Tower, Sheikh Zayed Road, Dubai, UAE',
-  hours: 'Open 24/7 — we never stop for our travellers',
-  reviewUrl: 'https://share.google/6Yg4AJOHDoq0k574Q',
-  socials: [
-    {
-      name: 'Instagram',
-      href: 'https://www.instagram.com/radiantwaytravel?igsh=MW90NXQyaGl0bWZwdg==',
-      icon: 'Instagram',
-    },
-    { name: 'Facebook', href: 'https://www.facebook.com/share/19qorzUXsM/', icon: 'Facebook' },
-    { name: 'WhatsApp', href: 'https://wa.me/971547861293', icon: 'MessageCircle' },
-  ],
-  // Fallback for the hero's Google badge until the server has a Places API key
-  // (see server/.env.example) — kept at the real listing's figures so the badge
-  // never attributes made-up numbers to Google. Editable in Admin → Settings.
-  rating: 4.7,
-  reviewCount: 39,
-}
+// Link builders for phone / WhatsApp. The company details themselves come
+// from the API (Setting table, "company" key) via ContentContext — every one
+// of these takes that object as its first argument rather than closing over a
+// hardcoded one, so the links follow whatever is set in Admin → Settings.
 
-// Build a WhatsApp chat link, optionally with a prefilled message.
-export const waLink = (text) =>
-  text ? `${company.whatsapp}?text=${encodeURIComponent(text)}` : company.whatsapp
-
-// Same, but against a passed-in company object — use this with the one from
-// useContent() so the link follows the WhatsApp number set in Admin → Settings.
+// Build a WhatsApp chat link against a company object, optionally prefilled.
 export const waLinkFor = (co, text) =>
   text ? `${co.whatsapp}?text=${encodeURIComponent(text)}` : co.whatsapp
 
@@ -53,14 +18,3 @@ export const waCallLink = (co, about) =>
 // Turn a display phone number into a tel: href (keeps digits and leading +).
 export const telHref = (phone) => `tel:${String(phone || '').replace(/[^\d+]/g, '')}`
 
-export const stats = [
-  { value: 8, suffix: '+', label: 'Years of expertise' },
-  { value: 50, suffix: 'k+', label: 'Happy travellers' },
-  { value: 40, suffix: '+', label: 'Destinations worldwide' },
-  {
-    value: company.rating,
-    suffix: '★',
-    label: `Rated by ${company.reviewCount}+ reviews`,
-    decimals: 1,
-  },
-]

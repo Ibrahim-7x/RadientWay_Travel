@@ -1,17 +1,16 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { api } from '../lib/api'
 
-// Static data is the instant first-paint value, and the fallback for an API
-// that cannot be reached at all. It is NOT a fallback for an empty database:
-// once a response arrives it replaces this, empty or not, so content deleted
-// in /admin disappears from the site instead of reverting to the demo data.
-import { packages as staticPackages, isUmrahPackage } from '../data/packages'
-import { destinations as staticDestinations } from '../data/destinations'
-import { visas as staticVisas } from '../data/visas'
-import { testimonials as staticTestimonials } from '../data/testimonials'
-import { faqs as staticFaqs } from '../data/faqs'
-import { services as staticServices, whyChooseUs as staticWhy } from '../data/services'
-import { company as staticCompany, stats as staticStats } from '../data/company'
+import { isUmrahPackage } from '../data/packages'
+
+// Every list starts empty and is filled from the API. The site used to ship a
+// copy of its own content in the bundle and render that until the API replied
+// (and whenever the database was empty), which meant demo packages appeared on
+// the live site with no way to remove them. The content now lives only in the
+// database — `npm run seed`, or server/prisma/seed-data.sql, puts it there.
+//
+// `loading` distinguishes "not fetched yet" from "genuinely empty" for
+// components that render a skeleton.
 
 const ContentContext = createContext(null)
 
@@ -20,15 +19,18 @@ const normFaqs = (rows) => rows.map((f) => ({ q: f.question, a: f.answer, id: f.
 const normDestinations = (rows) => rows.map((d) => ({ ...d, slug: d.packageSlug || '' }))
 
 export function ContentProvider({ children }) {
-  const [packages, setPackages] = useState(staticPackages)
-  const [destinations, setDestinations] = useState(staticDestinations)
-  const [visas, setVisas] = useState(staticVisas)
-  const [testimonials, setTestimonials] = useState(staticTestimonials)
-  const [faqs, setFaqs] = useState(staticFaqs)
-  const [services, setServices] = useState(staticServices)
-  const [whyChooseUs, setWhyChooseUs] = useState(staticWhy)
-  const [company, setCompany] = useState(staticCompany)
-  const [stats, setStats] = useState(staticStats)
+  const [packages, setPackages] = useState([])
+  const [destinations, setDestinations] = useState([])
+  const [visas, setVisas] = useState([])
+  const [testimonials, setTestimonials] = useState([])
+  const [faqs, setFaqs] = useState([])
+  const [services, setServices] = useState([])
+  const [whyChooseUs, setWhyChooseUs] = useState([])
+  // Contact chrome — phone, address, socials — read by the navbar, footer and
+  // every WhatsApp button. Empty until the settings call lands; components
+  // reach for optional fields, so they render without it.
+  const [company, setCompany] = useState({})
+  const [stats, setStats] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -45,9 +47,8 @@ export function ContentProvider({ children }) {
           api.get('/settings', { auth: false }),
         ])
         if (!alive) return
-        // A reply that arrived is authoritative, empty included: an empty
-        // database means the section is empty, not that it should show the
-        // bundled demo content. Only a failed request falls back, in catch.
+        // The database is the only source, so a reply is taken as-is — empty
+        // included. An empty table means an empty section.
         if (pkgs) setPackages(pkgs)
         if (dests) setDestinations(normDestinations(dests))
         if (vs) setVisas(vs)
@@ -62,7 +63,8 @@ export function ContentProvider({ children }) {
           if (settings.stats) setStats(settings.stats)
         }
       } catch {
-        // Keep the static fallback — the site still works offline.
+        // Nothing to fall back to. Leave the lists empty and let `loading`
+        // drop — the sections render as empty rather than spinning forever.
       } finally {
         if (alive) setLoading(false)
       }
