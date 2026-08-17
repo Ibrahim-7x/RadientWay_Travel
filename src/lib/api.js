@@ -1,9 +1,19 @@
 // Tiny fetch wrapper around the RadiantWay API.
-// - Reads the base URL from VITE_API_URL (falls back to the local dev server).
+// - Reads the base URL from VITE_API_URL, defaulting to same-origin /api.
 // - Attaches the stored admin JWT to every request when present.
 // - Throws an Error carrying the server's message + status on failure.
 
-const BASE = import.meta.env.VITE_API_URL || 'http://localhost:4001/api'
+// Same-origin by default, which is right everywhere this runs: production
+// serves the frontend and the API from one process (server.js), the Docker
+// stack proxies /api through nginx, and the Vite dev server proxies it to
+// localhost:4001 (see vite.config.js).
+//
+// This used to default to http://localhost:4001/api. VITE_API_URL is a BUILD
+// argument, so a production build that did not set it shipped that absolute
+// address to every visitor — their browser then tried to reach an API on their
+// own machine and the admin login died with ERR_CONNECTION_REFUSED. A default
+// that only works on the developer's laptop has no business in a bundle.
+const BASE = import.meta.env.VITE_API_URL || '/api'
 const TOKEN_KEY = 'rw_admin_token'
 
 export const getToken = () => localStorage.getItem(TOKEN_KEY)

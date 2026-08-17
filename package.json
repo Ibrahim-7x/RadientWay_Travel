@@ -8,7 +8,9 @@
     "dev": "vite",
     "build": "vite build && prisma generate --schema server/prisma/schema.prisma",
     "preview": "vite preview",
-    "start": "node server.js"
+    "start": "node server.js",
+    "seed": "node server/prisma/seed.js",
+    "seed:sql": "node server/prisma/gen-seed-sql.mjs > server/prisma/seed-data.sql"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
