@@ -79,10 +79,15 @@ const MODELS = parseSchema(
 // the password — which is what a generated hosting password usually contains —
 // resolves the same way a browser would resolve it, and percent-encoded
 // passwords still decode correctly.
-function connectionOptions(url) {
+export function connectionOptions(url) {
   const u = new URL(url)
   return {
-    host: u.hostname,
+    // "localhost" is not handed to the resolver: Node has preferred the IPv6
+    // answer since v17, and a MySQL account granted to 'user'@'localhost' is an
+    // IPv4/socket grant — the connection arrives from ::1 and is refused with
+    // `Access denied for user '…'@'::1' (using password: YES)`, which reads as
+    // a wrong password rather than a wrong address family.
+    host: u.hostname === 'localhost' ? '127.0.0.1' : u.hostname,
     port: Number(u.port) || 3306,
     user: decodeURIComponent(u.username),
     password: decodeURIComponent(u.password),

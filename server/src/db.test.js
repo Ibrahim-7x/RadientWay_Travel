@@ -10,7 +10,22 @@ import { readFileSync } from 'node:fs'
 
 process.env.DATABASE_URL ??= 'mysql://u:p@localhost:3306/test'
 
-const { default: db, driver, parseSchema, translate } = await import('./db.js')
+const { default: db, driver, parseSchema, translate, connectionOptions } =
+  await import('./db.js')
+
+// ── connection string ───────────────────────────────────────────────────────
+
+// localhost must not reach the resolver, or Node picks ::1 and a grant written
+// for 'user'@'localhost' refuses the connection as a bad password.
+assert.equal(connectionOptions('mysql://u:p@localhost:3306/d').host, '127.0.0.1')
+assert.equal(connectionOptions('mysql://u:p@db.example.com/d').host, 'db.example.com')
+assert.equal(connectionOptions('mysql://u:p@localhost/d').port, 3306, 'port defaults')
+
+// A hosting panel's generated password contains characters that are legal in a
+// URL and characters that are not; both have to arrive at MySQL intact.
+assert.equal(connectionOptions('mysql://u:Pass%40Word2026@localhost/d').password, 'Pass@Word2026')
+assert.equal(connectionOptions('mysql://u:Pass@Word2026@localhost/d').password, 'Pass@Word2026')
+assert.equal(connectionOptions('mysql://u:p@localhost/u382_radiantway').database, 'u382_radiantway')
 
 // ── schema parsing ──────────────────────────────────────────────────────────
 
