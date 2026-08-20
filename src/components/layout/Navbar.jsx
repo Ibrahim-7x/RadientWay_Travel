@@ -11,6 +11,9 @@ import WhatsAppIcon from '../ui/WhatsAppIcon'
 import NavDropdown from './NavDropdown'
 import Logo from './Logo'
 
+// Visas shown in the navbar dropdown before it defers to the visa page.
+const VISA_MENU_LIMIT = 7
+
 export default function Navbar() {
   const { company, regions, umrahPackages, visas } = useContent()
   const [scrolled, setScrolled] = useState(false)
@@ -19,7 +22,7 @@ export default function Navbar() {
 
   // Submenus for the three catalogue tabs, keyed by the tab's path. Built from
   // the same content the pages use, so anything added in the admin panel shows
-  // up here too. The first row is always the section index.
+  // up here too. Each list carries a row linking to the section index.
   const submenus = {
     '/tours': [
       { label: 'All tour packages', to: '/tours', muted: true },
@@ -31,12 +34,14 @@ export default function Navbar() {
       { label: 'All Umrah packages', to: '/umrah', muted: true },
       ...umrahPackages.map((p) => ({ label: p.name, to: packagePath(p) })),
     ],
+    // Too many visas to list in a hover panel, so this one is capped and the
+    // index row moves to the bottom as the way to see the rest.
     '/visa': [
-      { label: 'All visa services', to: '/visa', muted: true },
-      ...visas.map((v) => ({
+      ...visas.slice(0, VISA_MENU_LIMIT).map((v) => ({
         label: `${v.flag ? `${v.flag}  ` : ''}${v.country}`,
         to: `/visa?country=${encodeURIComponent(v.country)}`,
       })),
+      { label: `View all ${visas.length} visa services →`, to: '/visa', muted: true },
     ],
   }
 
