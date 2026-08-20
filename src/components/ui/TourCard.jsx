@@ -102,7 +102,7 @@ export default function TourCard({ pkg }) {
           <h3 className="font-display text-xl font-semibold text-navy-950 transition-colors group-hover:text-gold-700">
             {pkg.name}
           </h3>
-          <p className="mt-1.5 text-sm leading-relaxed text-navy-500">{pkg.tagline}</p>
+          <p className="mt-1.5 line-clamp-3 text-sm leading-relaxed text-navy-500">{pkg.tagline}</p>
 
           <div className="mt-4 flex flex-wrap gap-2">
             {pkg.includes?.slice(0, 3).map((inc) => (

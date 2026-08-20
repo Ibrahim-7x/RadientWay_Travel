@@ -134,7 +134,9 @@ export default function TourDetail() {
               ))}
             </motion.div>
 
-            {/* Highlights */}
+            {/* Highlights — hidden when a package carries none, so a sparse
+                entry does not render a bare heading. Same for the two below. */}
+            {pkg.highlights.length > 0 && (
             <div className="mt-12">
               <h2 className="font-display text-2xl font-semibold text-navy-950">Trip highlights</h2>
               <motion.div
@@ -155,7 +157,9 @@ export default function TourDetail() {
               </motion.div>
             </div>
 
-            {/* Itinerary timeline */}
+            )}
+
+            {pkg.itinerary.length > 0 && (
             <div className="mt-12">
               <h2 className="font-display text-2xl font-semibold text-navy-950">Day-by-day itinerary</h2>
               <div className="relative mt-6 border-l-2 border-dashed border-gold-300 pl-8">
@@ -178,7 +182,9 @@ export default function TourDetail() {
               </div>
             </div>
 
-            {/* Inclusions */}
+            )}
+
+            {pkg.includes.length > 0 && (
             <div className="mt-12">
               <h2 className="font-display text-2xl font-semibold text-navy-950">What’s included</h2>
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
@@ -192,6 +198,7 @@ export default function TourDetail() {
                 ))}
               </div>
             </div>
+            )}
           </div>
 
           {/* Sticky booking card */}
@@ -204,7 +211,9 @@ export default function TourDetail() {
                 </span>
                 <span className="mb-1 text-sm text-navy-400">/ person</span>
               </div>
-              <p className="mt-1 text-xs text-navy-400">{pkg.occupancy} · installment plans available</p>
+              <p className="mt-1 text-xs text-navy-400">
+                {pkg.occupancy ? `${pkg.occupancy} · ` : ''}installment plans available
+              </p>
 
               <div className="my-6 h-px bg-navy-950/10" />
 
