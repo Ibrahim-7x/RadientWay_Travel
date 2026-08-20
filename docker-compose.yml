@@ -25,6 +25,11 @@ services:
       MYSQL_PASSWORD: radiantway
     volumes:
       - db-data:/var/lib/mysql
+      # Builds the schema on first boot of an empty volume. The server image
+      # ships no Prisma engine (see server/Dockerfile), so `migrate deploy`
+      # cannot create the tables here — this file is the same migration plus
+      # the 0_init history row, so a later deploy is still a no-op.
+      - ./server/prisma/radiantway_mysql_schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
     healthcheck:
       # The API's first act is to migrate, which fails against a half-started
       # server. depends_on alone only waits for the container, not for mysqld.
@@ -61,7 +66,10 @@ services:
       # Places API; unset, the badge falls back to Admin → Settings.
       GOOGLE_PLACES_API_KEY: "${GOOGLE_PLACES_API_KEY:-}"
       GOOGLE_PLACE_ID: "${GOOGLE_PLACE_ID:-}"
-    command: sh -c "npx prisma migrate deploy && npm run seed && npm run dev"
+    # No `prisma migrate deploy`: the schema engine needs libssl, which this
+    # image deliberately does not carry. The db container applies the schema
+    # itself (see its initdb mount above).
+    command: sh -c "npm run seed && npm run dev"
 
   # ── Vite dev server (React frontend) ──
   dev:
