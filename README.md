@@ -68,6 +68,18 @@ or overwrite anything entered through `/admin`. To reseed one table, empty it fi
 `server/prisma/radiantway_mysql_schema.sql` through phpMyAdmin once. `npm run seed` then fills
 them, and it also runs on every boot (after the port opens, never before it — see `server.js`).
 
+**Updating content that is already live.** `npm run seed` only fills *empty* tables, so it
+cannot push an edited price or a newly added visa to a database that already has rows:
+
+```bash
+cd server && npm run seed:content
+```
+
+That syncs every visa and package in `seed-data.js` into an existing database — a visa matched
+on country and a package on slug are updated in place (keeping their id, `order` and published
+flag), anything new is appended, and nothing is ever deleted. Safe to re-run. The frontend reads
+the database, so the change is live on the next request.
+
 The content is also available as `server/prisma/seed-data.sql` if you would rather import it.
 Both SQL files are generated from the schema and `seed-data.js`, so they cannot drift from what
 the app expects. Regenerate the content one with `npm run seed:sql` after editing

@@ -9,6 +9,7 @@
     "dev": "node --watch src/index.js",
     "start": "node src/index.js",
     "seed": "node prisma/seed.js",
+    "seed:content": "node prisma/seed-content.js",
     "prisma:migrate": "prisma migrate dev",
     "db:reset": "prisma migrate reset --force"
   },
