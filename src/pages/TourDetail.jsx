@@ -13,6 +13,15 @@ import WhatsAppIcon from '../components/ui/WhatsAppIcon'
 import StarRating from '../components/ui/StarRating'
 import { fadeUp, stagger, viewportOnce } from '../lib/motion'
 
+// decodeURIComponent throws on a lone `%`, which a hand-typed URL can contain.
+const safeDecode = (p) => {
+  try {
+    return decodeURIComponent(p)
+  } catch {
+    return p
+  }
+}
+
 export default function TourDetail() {
   const { slug } = useParams()
   const { pathname } = useLocation()
@@ -57,8 +66,13 @@ export default function TourDetail() {
 
   // Keep the URL and the highlighted nav tab in sync with the package's
   // category, so older /tours/<umrah-slug> links land in the right place.
+  //
+  // Compared against the *decoded* pathname: a slug carrying a character the
+  // URL has to escape (a space, most often) would otherwise never equal its own
+  // canonical path, and the redirect would fire on every render — a blank page
+  // instead of the package.
   const canonicalPath = packagePath(pkg)
-  if (canonicalPath !== pathname) return <Navigate to={canonicalPath} replace />
+  if (canonicalPath !== safeDecode(pathname)) return <Navigate to={canonicalPath} replace />
 
   const umrah = isUmrahPackage(pkg)
 

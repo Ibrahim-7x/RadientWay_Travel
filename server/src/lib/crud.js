@@ -26,11 +26,20 @@ export function crud(config) {
   const delegate = () => db[model]
 
   // Keep only whitelisted, writable fields off the request body.
+  //
+  // Strings are trimmed on the way in. A stray space typed into the admin form
+  // is invisible there and survives every equality check MySQL makes — its
+  // collation is PAD SPACE, so `slug = 'x'` still finds a row holding `'x '` —
+  // but JavaScript compares the two as different strings. A slug saved as
+  // "tour-France-couple " therefore fetched fine and then made TourDetail
+  // redirect to its own canonical path forever, rendering a blank page.
+  const clean = (v) => (typeof v === 'string' ? v.trim() : v)
+
   const pick = (body) => {
     if (!body || typeof body !== 'object') return {}
-    if (!allowed) return { ...body }
+    const src = allowed ? allowed.filter((k) => k in body) : Object.keys(body)
     const out = {}
-    for (const k of allowed) if (k in body) out[k] = body[k]
+    for (const k of src) out[k] = clean(body[k])
     return out
   }
 
