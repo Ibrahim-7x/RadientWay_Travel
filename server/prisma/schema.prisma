@@ -39,10 +39,10 @@ model Package {
   country    String
   region     String
   city       String
-  tagline    String   @db.Text
-  nights     Int
-  days       Int
-  occupancy  String
+  tagline    String   @default("") @db.Text
+  nights     Int      @default(0)
+  days       Int      @default(0)
+  occupancy  String   @default("")
   price      Int
   currency   String   @default("AED")
   hotelStars Int      @default(4)
@@ -50,7 +50,7 @@ model Package {
   featured   Boolean  @default(false)
   published  Boolean  @default(true)
   order      Int      @default(0)
-  image      String   @db.Text
+  image      String   @default("") @db.Text
   gallery    String   @default("[]") @db.Text // JSON string[]
   tags       String   @default("[]") @db.Text // JSON string[]
   includes   String   @default("[]") @db.Text // JSON string[]
@@ -96,7 +96,7 @@ model Visa {
 model Testimonial {
   id        Int      @id @default(autoincrement())
   name      String
-  trip      String
+  trip      String   @default("")
   rating    Int      @default(5)
   quote     String   @db.Text
   published Boolean  @default(true)
