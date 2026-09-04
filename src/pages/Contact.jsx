@@ -10,15 +10,14 @@ import { useToast } from '../context/ToastContext'
 import { fadeUp, stagger, viewportOnce } from '../lib/motion'
 import { useContent } from '../context/ContentContext'
 
-const contactItems = [
-  { icon: Phone, label: 'Call us', value: company.phone, href: company.phoneHref },
-  { icon: Mail, label: 'Email us', value: company.email, href: company.emailHref },
-  { icon: MapPin, label: 'Visit us', value: company.address },
-  { icon: Clock, label: 'Hours', value: company.hours },
-]
-
 export default function Contact() {
   const { company } = useContent()
+  const contactItems = [
+    { icon: Phone, label: 'Call us', value: company.phone, href: company.phoneHref },
+    { icon: Mail, label: 'Email us', value: company.email, href: company.emailHref },
+    { icon: MapPin, label: 'Visit us', value: company.address },
+    { icon: Clock, label: 'Hours', value: company.hours },
+  ]
   const toast = useToast()
   const [params] = useSearchParams()
   const [sent, setSent] = useState(false)
