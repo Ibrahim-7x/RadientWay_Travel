@@ -11,7 +11,10 @@
     "start": "node server.js",
     "seed": "node server/prisma/seed.js",
     "seed:sql": "node server/prisma/gen-seed-sql.mjs > server/prisma/seed-data.sql",
-    "test": "node server/src/db.test.js"
+    "test": "npm run test:unit && npm run test:api && npm run test:e2e",
+    "test:unit": "node server/src/db.test.js && node server/src/app.cors.test.mjs",
+    "test:api": "node server/src/api.test.mjs",
+    "test:e2e": "vite build && node browser.test.mjs"
   },
   "dependencies": {
     "@vitejs/plugin-react": "^4.3.1",

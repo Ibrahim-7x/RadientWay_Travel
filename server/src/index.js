@@ -1,4 +1,4 @@
-import 'dotenv/config'
+import './lib/loadenv.js'
 import { requireSecrets } from './lib/env.js'
 import { createApp } from './app.js'
 import db from './db.js'

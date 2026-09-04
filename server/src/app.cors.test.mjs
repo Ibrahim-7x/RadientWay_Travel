@@ -4,9 +4,11 @@
 // https://radiantwaytravel.com") because PUBLIC_URL was unset. Same-origin must
 // pass without configuration; a foreign origin must still be refused.
 
+import './lib/loadenv.js'
 import assert from 'node:assert/strict'
 import { createServer } from 'node:http'
 import { createApp } from './app.js'
+import db from './db.js'
 
 process.env.CLIENT_ORIGIN = 'https://allowed.example'
 delete process.env.PUBLIC_URL // the production state that caused the outage
@@ -43,3 +45,6 @@ assert.equal(none.status, 200, `health check got ${none.status}`)
 
 server.close()
 console.log('CORS: same-origin allowed, allowlist allowed, foreign refused, no-origin allowed ✓')
+// The login attempts opened the MySQL pool, whose idle connections keep the
+// event loop alive. Without this the test passes and then hangs forever.
+await db.$disconnect()
