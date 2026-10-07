@@ -58,6 +58,13 @@ const expect = (res, status, what) =>
 
 const rowsOf = (data) => (Array.isArray(data) ? data : data?.items || data?.rows || [])
 
+// Fetches a contact-form captcha and answers it the way a person would.
+const solvedCaptcha = async () => {
+  const { data } = await call('GET', '/captcha')
+  const [a, b] = data.question.match(/\d+/g).map(Number)
+  return { captchaToken: data.token, captchaAnswer: a + b }
+}
+
 // ── Public reads ────────────────────────────────────────────────────────────
 await check('GET /health', async () => {
   const r = await call('GET', '/health')
@@ -257,7 +264,10 @@ await check('POST /contact creates a lead the admin can read, patch and delete',
     name: 'ZZ Test Contact',
     email,
     phone: '+971500000000',
+    adults: '2',
+    children: '3',
     message: 'automated test message',
+    ...(await solvedCaptcha()),
   })
   assert.ok(
     [200, 201].includes(r.status),
@@ -268,6 +278,7 @@ await check('POST /contact creates a lead the admin can read, patch and delete',
   const mine = rowsOf(leads.data).find((l) => l.email === email)
   assert.ok(mine, 'the submitted enquiry never reached the admin leads list')
   try {
+    assert.deepEqual([mine.adults, mine.children], [2, 3], 'adults/children were not stored')
     expect(await call('PATCH', `/admin/leads/${mine.id}`, { status: 'read' }, { auth: true }), 200, 'lead status patch')
     expect(
       await call('PATCH', `/admin/leads/${mine.id}`, { status: 'nonsense' }, { auth: true }),
@@ -332,6 +343,17 @@ await check('POST /subscribe stores an email the admin can read and delete', asy
 
 await check('POST /contact rejects an incomplete submission', async () => {
   expect(await call('POST', '/contact', { name: 'only a name' }), 400, 'incomplete contact form')
+})
+
+await check('POST /contact rejects a wrong or missing captcha and bad passenger counts', async () => {
+  const base = { name: 'ZZ', email: 'zz@example.com', phone: '+971500000003', message: 'x' }
+  const { captchaToken, captchaAnswer } = await solvedCaptcha()
+  expect(await call('POST', '/contact', { ...base, phone: ' ', captchaToken, captchaAnswer }), 400, 'blank contact number')
+  expect(await call('POST', '/contact', base), 400, 'missing captcha')
+  expect(await call('POST', '/contact', { ...base, captchaToken, captchaAnswer: captchaAnswer + 1 }), 400, 'wrong captcha')
+  expect(await call('POST', '/contact', { ...base, captchaToken: `1.${captchaToken.split('.')[1]}`, captchaAnswer }), 400, 'tampered expiry')
+  expect(await call('POST', '/contact', { ...base, captchaToken, captchaAnswer, adults: 0 }), 400, 'zero adults')
+  expect(await call('POST', '/contact', { ...base, captchaToken, captchaAnswer, children: 1.5 }), 400, 'fractional children')
 })
 
 // ── Admin image upload ──────────────────────────────────────────────────────

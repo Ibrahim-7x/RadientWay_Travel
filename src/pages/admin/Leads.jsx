@@ -70,6 +70,7 @@ export default function Leads() {
         </div>
       ),
     },
+    { key: 'adults', label: 'Passengers', render: (r) => `${r.adults} adult${r.adults === 1 ? '' : 's'}, ${r.children} child${r.children === 1 ? '' : 'ren'}` },
     { key: 'message', label: 'Message', render: (r) => <p className="max-w-md text-navy-600">{r.message}</p> },
     { key: 'createdAt', label: 'Received', render: (r) => fmtDate(r.createdAt) },
     {

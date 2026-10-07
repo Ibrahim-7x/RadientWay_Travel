@@ -23,6 +23,7 @@ router.get('/reviews/google', getGoogleRating)
 
 // Submissions
 router.post('/bookings', formLimiter, bookings.create)
+router.get('/captcha', leads.captcha)
 router.post('/contact', formLimiter, leads.create)
 router.post('/subscribe', formLimiter, subscribers.subscribe)
 

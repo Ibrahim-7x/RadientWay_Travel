@@ -249,6 +249,8 @@ await pageRenders('page /nonsense (404 page)', '/definitely-not-a-page', [/not f
 await check('contact form submits and confirms', async () => {
   await goto('/contact')
   const stamp = Date.now()
+  for (let i = 0; i < 40 && !(await evaluate(`/What is \\d+ \\+ \\d+/.test(document.querySelector('form').innerText)`)); i++)
+    await sleep(250)
   await evaluate(`(() => {
     const set = (el, v) => {
       const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement : HTMLInputElement
@@ -261,6 +263,8 @@ await check('contact form submits and confirms', async () => {
     set(email, 'zz-browser-${stamp}@example.com')
     set(phone, '+971500000002')
     set(form.querySelector('textarea'), 'automated browser test')
+    const [a, b] = form.innerText.match(/What is (\\d+) \\+ (\\d+)/).slice(1).map(Number)
+    set([...form.querySelectorAll('input')].pop(), String(a + b))
     form.querySelector('button[type=submit]').click()
     return true
   })()`)

@@ -6,8 +6,8 @@
 -- those (error 1101) while MariaDB accepts them, and Prisma applies the same
 -- defaults client-side on every write, so nothing is lost.
 --
--- Import into an EMPTY database. The final INSERT records 0_init as already
--- applied in Prisma's migration history, so a later `prisma migrate deploy`
+-- Import into an EMPTY database. The final INSERT records every migration as
+-- already applied in Prisma's migration history, so a later `prisma migrate deploy`
 -- is a no-op instead of trying to recreate these tables.
 --
 -- This file is the migration in server/prisma/migrations/0_init/ plus that
@@ -170,6 +170,8 @@ CREATE TABLE `Lead` (
     `name` VARCHAR(191) NOT NULL,
     `email` VARCHAR(191) NOT NULL,
     `phone` VARCHAR(191) NOT NULL DEFAULT '',
+    `adults` INTEGER NOT NULL DEFAULT 1,
+    `children` INTEGER NOT NULL DEFAULT 0,
     `message` TEXT NOT NULL,
     `status` VARCHAR(191) NOT NULL DEFAULT 'new',
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
@@ -218,6 +220,9 @@ INSERT INTO `_prisma_migrations`
 VALUES
     ('00000000-0000-0000-0000-00000000init',
      'a627dc7c382a93825a8bb1bb9e2158421510dea9c36892edffe71e0a36f62a47',
-     CURRENT_TIMESTAMP(3), '0_init', CURRENT_TIMESTAMP(3), 1);
+     CURRENT_TIMESTAMP(3), '0_init', CURRENT_TIMESTAMP(3), 1),
+    ('00000000-0000-0000-0000-0001leadtrav',
+     'afd882f32188be8c248c788ec1fb67fc9365805290a16359df3058d20d2a23c7',
+     CURRENT_TIMESTAMP(3), '1_lead_travellers', CURRENT_TIMESTAMP(3), 1);
 
 SET FOREIGN_KEY_CHECKS = 1;

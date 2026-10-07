@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Phone, Mail, MapPin, Clock, Send, CheckCircle2, Loader2 } from 'lucide-react'
@@ -9,6 +9,8 @@ import { api } from '../lib/api'
 import { useToast } from '../context/ToastContext'
 import { fadeUp, stagger, viewportOnce } from '../lib/motion'
 import { useContent } from '../context/ContentContext'
+
+const EMPTY = { name: '', email: '', phone: '', adults: 1, children: 0, message: '', captchaAnswer: '' }
 
 export default function Contact() {
   const { company } = useContent()
@@ -26,11 +28,14 @@ export default function Contact() {
   // arrives already saying what the traveller is asking about.
   const enquiry = params.get('enquiry')
   const [form, setForm] = useState({
-    name: '',
-    email: '',
-    phone: '',
+    ...EMPTY,
     message: enquiry ? `I'd like to enquire about: ${enquiry}\n\n` : '',
   })
+  const [captcha, setCaptcha] = useState(null)
+  const loadCaptcha = () => api.get('/captcha', { auth: false }).then(setCaptcha, () => setCaptcha(null))
+  useEffect(() => {
+    loadCaptcha()
+  }, [])
 
   const update = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
 
@@ -38,14 +43,16 @@ export default function Contact() {
     e.preventDefault()
     setSending(true)
     try {
-      await api.post('/contact', form, { auth: false })
+      await api.post('/contact', { ...form, captchaToken: captcha?.token }, { auth: false })
       setSent(true)
-      setForm({ name: '', email: '', phone: '', message: '' })
+      setForm(EMPTY)
       setTimeout(() => setSent(false), 4000)
     } catch (err) {
       toast.error(err.message || 'Could not send your message. Please try again.')
+      setForm((f) => ({ ...f, captchaAnswer: '' }))
     } finally {
       setSending(false)
+      loadCaptcha() // new question after every attempt
     }
   }
 
@@ -127,10 +134,14 @@ export default function Contact() {
             <p className="mt-1 text-sm text-navy-500">We usually reply within a few hours.</p>
 
             <div className="mt-6 grid gap-5">
-              <Field label="Full name" value={form.name} onChange={update('name')} placeholder="Your name" required />
+              <Field label="Passenger name" value={form.name} onChange={update('name')} placeholder="Your name" required />
               <div className="grid gap-5 sm:grid-cols-2">
                 <Field label="Email" type="email" value={form.email} onChange={update('email')} placeholder="you@email.com" required />
-                <Field label="Phone" value={form.phone} onChange={update('phone')} placeholder="+971 ..." />
+                <Field label="Contact number" type="tel" value={form.phone} onChange={update('phone')} placeholder="+971 ..." required />
+              </div>
+              <div className="grid gap-5 sm:grid-cols-2">
+                <Field label="Adults" type="number" min={1} max={99} value={form.adults} onChange={update('adults')} required />
+                <Field label="Children" type="number" min={0} max={99} value={form.children} onChange={update('children')} required />
               </div>
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-navy-700">Message</label>
@@ -143,7 +154,16 @@ export default function Contact() {
                   className="w-full resize-none rounded-2xl border border-navy-950/10 bg-cream px-4 py-3 text-sm text-navy-900 outline-none transition-all focus:border-gold-400 focus:ring-2 focus:ring-gold-200"
                 />
               </div>
-              <button type="submit" disabled={sending} className="btn-gold w-full disabled:opacity-60">
+              <Field
+                label={`Security question: ${captcha?.question || 'loading…'}`}
+                inputMode="numeric"
+                value={form.captchaAnswer}
+                onChange={update('captchaAnswer')}
+                placeholder="Your answer"
+                autoComplete="off"
+                required
+              />
+              <button type="submit" disabled={sending || !captcha} className="btn-gold w-full disabled:opacity-60">
                 {sending ? (
                   <Loader2 className="h-5 w-5 animate-spin" />
                 ) : sent ? (

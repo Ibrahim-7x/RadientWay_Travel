@@ -7,7 +7,7 @@ const EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d'
 // read before index.js can run its production check, which made the dev
 // fallback reachable from anything that imported this file. Production has no
 // fallback at all — signing without a real secret throws instead.
-function secret() {
+export function secret() {
   const configured = process.env.JWT_SECRET
   if (configured) return configured
   if (process.env.NODE_ENV === 'production') {
