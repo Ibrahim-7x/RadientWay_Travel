@@ -65,8 +65,9 @@ It is idempotent per table: a table that already has rows is skipped, so it will
 or overwrite anything entered through `/admin`. To reseed one table, empty it first.
 
 **Hostinger.** The tables are not created by the app, so import
-`server/prisma/radiantway_mysql_schema.sql` through phpMyAdmin once. `npm run seed` then fills
-them, and it also runs on every boot (after the port opens, never before it — see `server.js`).
+`server/prisma/radiantway_mysql_schema.sql` through phpMyAdmin once, then run `npm run seed`
+once over SSH (or import `server/prisma/seed-data.sql`). The server does not seed on boot — see
+`server.js` for why.
 
 **Updating content that is already live.** `npm run seed` only fills *empty* tables, so it
 cannot push an edited price or a newly added visa to a database that already has rows:

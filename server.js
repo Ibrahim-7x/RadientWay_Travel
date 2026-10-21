@@ -12,7 +12,6 @@
 import 'dotenv/config'
 import path from 'node:path'
 import { existsSync } from 'node:fs'
-import { execFile } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 
 import { requireSecrets } from './server/src/lib/env.js'
@@ -42,42 +41,30 @@ if (!existsSync(path.join(DIST, 'index.html'))) {
 // server/prisma/radiantway_mysql_schema.sql through phpMyAdmin. Prisma is a
 // build-time tool here now — nothing at runtime loads it (see server/src/db.js).
 
-// Seeding runs AFTER the port is open, never before.
+// Seeding does not run here either. Run `npm run seed` by hand, once, on a new
+// database.
 //
-// It spawns a second Node process, and a spawn is exactly what this host is
-// short of. A synchronous spawn ahead of listen() turned any failure or stall
-// there into a site-wide 503: the process was alive but had never bound the
-// port, so the proxy had nothing to talk to. Nothing about creating an admin
-// account needs to block the marketing site from serving, so it no longer does.
-// The timeout is the backstop for a stall; failure is only ever a warning.
-//
-// It is launched as `node <script>` rather than through the npm or npx
-// wrappers. Those are .cmd shims on Windows, and since the fix for
-// CVE-2024-27980 Node refuses to spawn a .cmd without shell:true — which is
-// itself deprecated for passing arguments (DEP0190). Calling the JS entry
-// point with process.execPath sidesteps both and needs no shell on any
-// platform.
-const SEED = path.join(__dirname, 'server', 'prisma', 'seed.js')
+// It used to run as a child process on every boot. The hosting account caps
+// processes, counting every thread — a dozen or so per Node process — across
+// all its sites, and Passenger starts several instances and recycles them, so
+// those seed children stacked up, hit the cap and 503'd every site on the
+// account. All to print "already populated — skipping".
 
 const app = createApp({ staticDir: DIST })
 
-const server = app.listen(PORT, async () => {
+const server = app.listen(PORT, () => {
   console.log(`\n  RadiantWay listening on port ${PORT}`)
   console.log(`  Frontend: dist/   API: /api   Health: /api/health\n`)
-
-  // Seeding needs the database, so there is nothing to learn from spawning a
-  // process that will only fail the same way the check just did.
-  if (!(await checkConnection())) return
-
-  execFile(process.execPath, [SEED], { env: process.env, timeout: 60_000 }, (err, stdout) => {
-    if (stdout) process.stdout.write(stdout)
-    if (err) console.warn(`\n  Seed skipped or failed (${err.message}). Site is up.\n`)
-  })
+  checkConnection()
 })
 
-const shutdown = async () => {
-  await db.$disconnect()
-  server.close(() => process.exit(0))
+// The server stops first, so requests already in flight finish against an
+// open pool; closing the pool first failed them with "Pool is closed". The
+// timer is for a keep-alive socket that never closes — it must not keep a
+// dead process, and its slots, around.
+const shutdown = () => {
+  server.close(() => db.$disconnect().finally(() => process.exit(0)))
+  setTimeout(() => process.exit(0), 5_000).unref()
 }
 process.on('SIGINT', shutdown)
 process.on('SIGTERM', shutdown)

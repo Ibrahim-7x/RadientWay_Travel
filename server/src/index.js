@@ -16,10 +16,11 @@ const server = app.listen(PORT, () => {
   console.log(`  Health check:  http://localhost:${PORT}/api/health\n`)
 })
 
-// Graceful shutdown.
-const shutdown = async () => {
-  await db.$disconnect()
-  server.close(() => process.exit(0))
+// Graceful shutdown: the server stops before the pool closes, so in-flight
+// requests finish (see server.js).
+const shutdown = () => {
+  server.close(() => db.$disconnect().finally(() => process.exit(0)))
+  setTimeout(() => process.exit(0), 5_000).unref()
 }
 process.on('SIGINT', shutdown)
 process.on('SIGTERM', shutdown)
